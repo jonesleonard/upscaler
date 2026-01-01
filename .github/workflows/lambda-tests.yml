@@ -1,0 +1,74 @@
+# .github/workflows/lambda-tests.yml
+
+name: Test Lambdas
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Best Practice: Set default permissions to read-only for security
+permissions:
+  contents: read
+
+# Best Practice: Cancel in-progress runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover-lambdas:
+    name: Discover Lambda Functions
+    runs-on: ubuntu-latest
+    outputs:
+      lambdas: ${{ steps.set-matrix.outputs.lambdas }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Discover lambda directories
+        id: set-matrix
+        run: |
+          # Find all subdirectories in src/lambdas and format them as a JSON array for the matrix
+          LAMBDAS=$(find src/lambdas -mindepth 1 -maxdepth 1 -type d | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "Discovered lambdas: $LAMBDAS"
+          echo "lambdas=$LAMBDAS" >> $GITHUB_OUTPUT
+
+  test-lambda:
+    name: Test ${{ matrix.lambda_path }}
+    needs: discover-lambdas
+    # Only run this job if the discover-lambdas job found directories
+    if: ${{ needs.discover-lambdas.outputs.lambdas != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lambda_path: ${{ fromJson(needs.discover-lambdas.outputs.lambdas) }}
+        python-version: ["3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          # Best Practice: Use built-in caching for pip dependencies
+          cache: "pip"
+          cache-dependency-path: "${{ matrix.lambda_path }}/requirements-test.txt"
+
+      - name: Install test dependencies
+        # Best Practice: Use hashFiles to check for file existence reliably
+        if: hashFiles(format('{0}/requirements-test.txt', matrix.lambda_path)) != ''
+        working-directory: ${{ matrix.lambda_path }}
+        run: pip install -r requirements-test.txt
+
+      - name: Run tests with pytest
+        # Best Practice: Use hashFiles to check for file existence reliably
+        if: hashFiles(format('{0}/requirements-test.txt', matrix.lambda_path)) != ''
+        working-directory: ${{ matrix.lambda_path }}
+        run: pytest tests/ -v --cov=. --cov-report=term-missing
