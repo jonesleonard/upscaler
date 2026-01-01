@@ -11,6 +11,10 @@ terraform {
   backend "s3" {
     # Backend configuration is provided via backend-config.tfvars
     # Initialize with: terraform init -backend-config=backend-config.tfvars
+    bucket       = ""
+    key          = ""
+    region       = ""
+    use_lockfile = true
   }
 }
 
