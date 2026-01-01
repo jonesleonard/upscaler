@@ -14,6 +14,7 @@ on:
 permissions:
   contents: read
   checks: write  # Required for publishing test results
+  pull-requests: write
 
 # Best Practice: Cancel in-progress runs on the same branch
 concurrency:
@@ -94,12 +95,12 @@ jobs:
           name: coverage-report-${{ matrix.python-version }}-${{ steps.artifact-name.outputs.sanitized }}
           path: ${{ matrix.lambda_path }}/coverage.xml
 
-      - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          files: ${{ matrix.lambda_path }}/test-results.xml
-          check_name: Test Results (${{ matrix.lambda_path }})
+      # - name: Publish test results
+      #   uses: EnricoMi/publish-unit-test-result-action@v2
+      #   if: always()
+      #   with:
+      #     files: ${{ matrix.lambda_path }}/test-results.xml
+      #     check_name: Test Results (${{ matrix.lambda_path }})
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
