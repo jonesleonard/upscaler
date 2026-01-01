@@ -111,3 +111,13 @@ applyTo: '**/*.tf'
   - Use the `.tftest.hcl` extension for test files.
   - Write tests to cover both positive and negative scenarios.
   - Ensure tests are idempotent and can be run multiple times without side effects.
+
+## State Locking
+State locking is an opt-in feature of the S3 backend.
+
+Locking can be enabled via S3 or DynamoDB. However, DynamoDB-based locking is deprecated and will be removed in a future minor version. To support migration from older versions of Terraform that only support DynamoDB-based locking, the S3 and DynamoDB arguments can be configured simultaneously.
+
+### Enabling S3 State Locking
+To enable S3 state locking, use the following optional argument:
+
+use_lockfile - (Optional) Whether to use a lockfile for locking the state file. Defaults to false.

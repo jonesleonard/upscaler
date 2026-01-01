@@ -1,0 +1,15 @@
+# Example Backend Configuration File
+# Copy this file to backend-config.tfvars and fill in your actual values
+
+bucket       = "your-terraform-state-bucket"
+key          = "dev/terraform.tfstate"
+region       = "us-east-1"
+use_lockfile = true
+
+# Optional: If using IAM role assumption
+assume_role = {
+  role_arn = "arn:aws:iam::ACCOUNT_ID:role/terraform-role"
+}
+
+# Optional: If using DynamoDB for state locking
+# dynamodb_table = "terraform-state-lock"

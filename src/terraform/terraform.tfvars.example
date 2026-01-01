@@ -1,0 +1,11 @@
+# Example Terraform Variables File
+# Copy this file to terraform.tfvars and fill in your actual values
+
+################################################################################
+# Basic Variables
+################################################################################
+
+aws_profile  = "your-aws-profile"
+region       = "us-east-1"
+environment  = "dev"
+project_name = "upscaler"
