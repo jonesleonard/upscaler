@@ -74,18 +74,24 @@ jobs:
         working-directory: ${{ matrix.lambda_path }}
         run: pytest tests/ -v --cov=. --cov-report=term-missing --cov-report=xml:coverage.xml --junitxml=test-results.xml
 
+      - name: Generate artifact name
+        id: artifact-name
+        run: |
+          SANITIZED_NAME=$(echo "${{ matrix.lambda_path }}" | tr '/' '-')
+          echo "sanitized=$SANITIZED_NAME" >> $GITHUB_OUTPUT
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always() # Upload on success or failure
         with:
-          name: test-results-${{ matrix.python-version }}-${{ matrix.lambda_path }}
+          name: test-results-${{ matrix.python-version }}-${{ steps.artifact-name.outputs.sanitized }}
           path: ${{ matrix.lambda_path }}/test-results.xml
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always() # Upload on success or failure
         with:
-          name: coverage-report-${{ matrix.python-version }}-${{ matrix.lambda_path }}
+          name: coverage-report-${{ matrix.python-version }}-${{ steps.artifact-name.outputs.sanitized }}
           path: ${{ matrix.lambda_path }}/coverage.xml
 
       - name: Publish test results
