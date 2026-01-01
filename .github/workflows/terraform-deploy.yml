@@ -36,7 +36,7 @@ concurrency:
   cancel-in-progress: false # Don't cancel Terraform operations to avoid state locks
 
 env:
-  TERRAFORM_VERSION: "1.9.0"
+  TERRAFORM_VERSION: "1.14.3"
   WORKING_DIRECTORY: "./src/terraform"
 
 jobs:
