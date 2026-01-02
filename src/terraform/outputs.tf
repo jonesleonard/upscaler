@@ -45,3 +45,37 @@ output "s3_logging_bucket_id" {
   description = "The name/ID of the S3 logging bucket."
   value       = module.s3.logging_bucket_id
 }
+
+################################################################################
+# ECR Repository Outputs
+################################################################################
+
+output "ecr_combiner_repository_arn" {
+  description = "The ARN of the combiner ECR repository."
+  value       = module.ecr.combiner_repository_arn
+}
+
+output "ecr_combiner_repository_url" {
+  description = "The URL of the combiner ECR repository."
+  value       = module.ecr.combiner_repository_url
+}
+
+output "ecr_splitter_repository_arn" {
+  description = "The ARN of the splitter ECR repository."
+  value       = module.ecr.splitter_repository_arn
+}
+
+output "ecr_splitter_repository_url" {
+  description = "The URL of the splitter ECR repository."
+  value       = module.ecr.splitter_repository_url
+}
+
+output "ecr_upscaler_repository_arn" {
+  description = "The ARN of the upscaler ECR repository."
+  value       = module.ecr.upscaler_repository_arn
+}
+
+output "ecr_upscaler_repository_url" {
+  description = "The URL of the upscaler ECR repository."
+  value       = module.ecr.upscaler_repository_url
+}

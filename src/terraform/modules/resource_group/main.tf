@@ -26,5 +26,5 @@ resource "aws_resourcegroups_group" "project" {
     })
   }
 
-  tags = merge({ Name = local.main_resource_group_name }, var.tags)
+  tags = merge({ Name = local.main_resource_group_name, Component = "GLOBAL" }, var.tags)
 }

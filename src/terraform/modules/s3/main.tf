@@ -121,7 +121,7 @@ module "s3_bucket" {
     }
   }
 
-  tags = merge({ Name = local.bucket_name }, var.tags)
+  tags = merge({ Name = local.bucket_name, Component = "GLOBAL" }, var.tags)
 }
 
 ################################################################################
@@ -184,5 +184,5 @@ module "s3_logging_bucket" {
     }
   ]
 
-  tags = merge({ Name = local.logging_bucket_name }, var.tags)
+  tags = merge({ Name = local.logging_bucket_name, Component = "GLOBAL" }, var.tags)
 }
