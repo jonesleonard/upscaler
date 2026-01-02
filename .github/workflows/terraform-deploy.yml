@@ -96,13 +96,11 @@ jobs:
 #             })
 
   plan:
-    name: Plan (${{ matrix.environment }})
+    name: Plan (dev)
     # needs: validate
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: ${{ github.event.inputs.environment && fromJSON(format('["{0}"]', github.event.inputs.environment)) || fromJSON('["dev"]') }}
-    
+    environment:
+      name: dev
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -127,17 +125,17 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', matrix.environment)] }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
-          role-session-name: GitHubActions-Terraform-${{ matrix.environment }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: GitHubActions-Terraform-dev
 
       - name: Create backend config
         env:
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
         run: |
           printf 'bucket="%s"\n' "${{ env.TF_STATE_BUCKET }}" >> backend-config.tfvars
-          printf 'key="%s"\n' "${{ matrix.environment }}/terraform.tfstate" >> backend-config.tfvars
-          printf 'region="%s"\n' "${{ vars.AWS_REGION || 'us-east-1' }}" >> backend-config.tfvars
+          printf 'key="%s"\n' "dev/terraform.tfstate" >> backend-config.tfvars
+          printf 'region="%s"\n' "${{ vars.AWS_REGION }}" >> backend-config.tfvars
           echo "use_lockfile = true" >> backend-config.tfvars
           cat backend-config.tfvars
         shell: bash
@@ -145,8 +143,8 @@ jobs:
       - name: Create terraform.tfvars
         run: |
           cat > terraform.tfvars << EOF
-          region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
-          environment  = "${{ matrix.environment }}"
+          region       = "${{ vars.AWS_REGION }}"
+          environment  = "dev"
           project_name = "${{ vars.PROJECT_NAME || 'upscaler' }}"
           EOF
 
@@ -158,15 +156,15 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan -no-color -out=tfplan-${{ matrix.environment }} | tee plan-output.txt
+          terraform plan -no-color -out=tfplan-dev | tee plan-output.txt
         continue-on-error: true
 
       - name: Upload plan artifact
         uses: actions/upload-artifact@v4
         if: steps.plan.outcome == 'success'
         with:
-          name: tfplan-${{ matrix.environment }}
-          path: ${{ env.WORKING_DIRECTORY }}/tfplan-${{ matrix.environment }}
+          name: tfplan-dev
+          path: ${{ env.WORKING_DIRECTORY }}/tfplan-dev
           retention-days: 5
 
       - name: Comment PR with plan
@@ -178,7 +176,7 @@ jobs:
             const planOutput = fs.readFileSync('${{ env.WORKING_DIRECTORY }}/plan-output.txt', 'utf8');
             const truncatedPlan = planOutput.length > 65000 ? planOutput.substring(0, 65000) + '\n\n... (truncated)' : planOutput;
             
-            const output = `#### Terraform Plan 📖 - Environment: \`${{ matrix.environment }}\`
+            const output = `#### Terraform Plan 📖 - Environment: \`dev\`
             
             <details><summary>Show Plan</summary>
             
