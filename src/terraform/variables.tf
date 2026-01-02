@@ -2,11 +2,6 @@
 # Basic Variables
 ################################################################################
 
-variable "aws_profile" {
-  description = "The AWS CLI profile to use for authentication. This profile should be configured in your AWS credentials file."
-  type        = string
-}
-
 variable "region" {
   description = "The AWS region where resources will be provisioned."
   type        = string
