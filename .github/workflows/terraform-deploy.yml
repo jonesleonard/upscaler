@@ -135,12 +135,10 @@ jobs:
         env:
           TF_STATE_BUCKET: ${{ secrets[format('TF_STATE_BUCKET_{0}', matrix.environment)] }}
         run: |
-          cat > backend-config.tfvars << EOF
-          bucket       = "${{ env.TF_STATE_BUCKET }}"
-          key          = "${{ matrix.environment }}/terraform.tfstate"
-          region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
-          use_lockfile = true
-          EOF
+          printf 'bucket="%s"\n' "${{ env.TF_STATE_BUCKET }}" >> backend-config.tfvars
+          printf 'key="%s"\n' "${{ matrix.environment }}/terraform.tfstate" >> backend-config.tfvars
+          printf 'region="%s"\n' "${{ vars.AWS_REGION || 'us-east-1' }}" >> backend-config.tfvars
+          echo "use_lockfile = true" >> backend-config.tfvars
           cat backend-config.tfvars
         shell: bash
 
