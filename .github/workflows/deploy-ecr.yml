@@ -21,10 +21,6 @@ on:
         description: "Path to the container source code"
         required: true
         type: string
-    secrets:
-      AWS_ROLE_ARN:
-        description: "The ARN of the AWS Role to assume for deployment"
-        required: true
   workflow_dispatch:
     inputs:
       environment:
