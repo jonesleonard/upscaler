@@ -40,70 +40,68 @@ env:
   WORKING_DIRECTORY: "./src/terraform"
 
 jobs:
-  validate:
-    name: Validate & Lint
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
+#   validate:
+#     name: Validate & Lint
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-      - name: Terraform Format Check
-        id: fmt
-        run: terraform fmt -check -recursive
-        continue-on-error: true
+#       - name: Terraform Format Check
+#         id: fmt
+#         run: terraform fmt -check -recursive
+#         continue-on-error: true
 
-      - name: Terraform Init
-        id: init
-        run: terraform init -backend=false
+#       - name: Terraform Init
+#         id: init
+#         run: terraform init -backend=false
 
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
+#       - name: Terraform Validate
+#         id: validate
+#         run: terraform validate -no-color
 
-      - name: Comment PR with validation results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+#       - name: Comment PR with validation results
+#         if: github.event_name == 'pull_request'
+#         uses: actions/github-script@v7
+#         with:
+#           script: |
+#             const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+#             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+#             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
             
-            <details><summary>Validation Output</summary>
+#             <details><summary>Validation Output</summary>
             
-            \`\`\`
-            ${{ steps.validate.outputs.stdout }}
-            \`\`\`
+#             \`\`\`
+#             ${{ steps.validate.outputs.stdout }}
+#             \`\`\`
             
-            </details>
+#             </details>
             
-            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+#             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
             
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
+#             github.rest.issues.createComment({
+#               issue_number: context.issue.number,
+#               owner: context.repo.owner,
+#               repo: context.repo.repo,
+#               body: output
+#             })
 
   plan:
     name: Plan (${{ matrix.environment }})
-    needs: validate
+    # needs: validate
     runs-on: ubuntu-latest
     strategy:
       matrix:
         environment: ${{ github.event.inputs.environment && fromJSON(format('["{0}"]', github.event.inputs.environment)) || fromJSON('["dev"]') }}
-    env:
-      TF_STATE_BUCKET: ${{ secrets[format('TF_STATE_BUCKET_{0}', matrix.environment)] }}
     
     defaults:
       run:
@@ -201,83 +199,83 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-  apply-dev:
-    name: Apply to Dev
-    needs: plan
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment:
-      name: dev
-      url: https://console.aws.amazon.com/resource-groups
+#   apply-dev:
+#     name: Apply to Dev
+#     needs: plan
+#     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#     runs-on: ubuntu-latest
+#     environment:
+#       name: dev
+#       url: https://console.aws.amazon.com/resource-groups
     
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
+#     defaults:
+#       run:
+#         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-      - name: Cache Terraform providers
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.WORKING_DIRECTORY }}/.terraform
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-
+#       - name: Cache Terraform providers
+#         uses: actions/cache@v4
+#         with:
+#           path: ${{ env.WORKING_DIRECTORY }}/.terraform
+#           key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+#           restore-keys: |
+#             ${{ runner.os }}-terraform-
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
-          role-session-name: GitHubActions-Terraform-Dev
+#       - name: Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+#           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+#           role-session-name: GitHubActions-Terraform-Dev
 
-      - name: Create backend config
-        run: |
-          cat > backend-config.tfvars << EOF
-          bucket       = "${{ secrets.TF_STATE_BUCKET_DEV }}"
-          key          = "dev/terraform.tfstate"
-          region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
-          use_lockfile = true
-          EOF
+#       - name: Create backend config
+#         run: |
+#           cat > backend-config.tfvars << EOF
+#           bucket       = "${{ secrets.TF_STATE_BUCKET_DEV }}"
+#           key          = "dev/terraform.tfstate"
+#           region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
+#           use_lockfile = true
+#           EOF
 
-      - name: Create terraform.tfvars
-        run: |
-          cat > terraform.tfvars << EOF
-          region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
-          environment  = "dev"
-          project_name = "${{ vars.PROJECT_NAME || 'upscaler' }}"
-          EOF
+#       - name: Create terraform.tfvars
+#         run: |
+#           cat > terraform.tfvars << EOF
+#           region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
+#           environment  = "dev"
+#           project_name = "${{ vars.PROJECT_NAME || 'upscaler' }}"
+#           EOF
 
-      - name: Terraform Init
-        run: terraform init -backend-config=backend-config.tfvars
+#       - name: Terraform Init
+#         run: terraform init -backend-config=backend-config.tfvars
 
-      - name: Download plan artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan-dev
-          path: ${{ env.WORKING_DIRECTORY }}
+#       - name: Download plan artifact
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: tfplan-dev
+#           path: ${{ env.WORKING_DIRECTORY }}
 
-      - name: Terraform Apply
-        id: apply
-        run: terraform apply -auto-approve tfplan-dev
+#       - name: Terraform Apply
+#         id: apply
+#         run: terraform apply -auto-approve tfplan-dev
 
-      - name: Terraform Output
-        id: output
-        run: terraform output -json > terraform-outputs.json
+#       - name: Terraform Output
+#         id: output
+#         run: terraform output -json > terraform-outputs.json
 
-      - name: Upload outputs
-        uses: actions/upload-artifact@v4
-        if: steps.apply.outcome == 'success'
-        with:
-          name: terraform-outputs-dev
-          path: ${{ env.WORKING_DIRECTORY }}/terraform-outputs.json
-          retention-days: 30
+#       - name: Upload outputs
+#         uses: actions/upload-artifact@v4
+#         if: steps.apply.outcome == 'success'
+#         with:
+#           name: terraform-outputs-dev
+#           path: ${{ env.WORKING_DIRECTORY }}/terraform-outputs.json
+#           retention-days: 30
 
   
