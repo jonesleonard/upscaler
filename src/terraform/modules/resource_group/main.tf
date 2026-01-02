@@ -3,7 +3,7 @@
 ################################################################################
 
 locals {
-  main_resource_group_name = "${var.project_name}-${var.environment}"
+  main_resource_group_name = "${var.project_name}-${var.environment}-rg"
 }
 
 resource "aws_resourcegroups_group" "project" {

@@ -1,8 +1,8 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  bucket_name         = "${var.project_name}-${var.environment}"
-  logging_bucket_name = "${var.project_name}-${var.environment}-logs"
+  bucket_name         = "${var.project_name}-${var.environment}-s3"
+  logging_bucket_name = "${var.project_name}-${var.environment}-logs-s3"
 }
 
 ################################################################################

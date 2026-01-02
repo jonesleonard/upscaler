@@ -1,7 +1,7 @@
 locals {
-  ecr_splitter_repository_name = "${var.project_name}-splitter-${var.environment}"
-  ecr_upscaler_repository_name = "${var.project_name}-upscaler-${var.environment}"
-  ecr_combiner_repository_name = "${var.project_name}-combiner-${var.environment}"
+  ecr_splitter_repository_name = "${var.project_name}-splitter-${var.environment}-ecr"
+  ecr_upscaler_repository_name = "${var.project_name}-upscaler-${var.environment}-ecr"
+  ecr_combiner_repository_name = "${var.project_name}-combiner-${var.environment}-ecr"
 }
 
 ################################################################################
