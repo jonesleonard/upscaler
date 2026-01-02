@@ -132,8 +132,10 @@ jobs:
           role-session-name: GitHubActions-Terraform-${{ matrix.environment }}
 
       - name: Create backend config
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
         run: |
-          printf 'bucket="%s"\n' "${{ vars.TF_STATE_BUCKET }}" >> backend-config.tfvars
+          printf 'bucket="%s"\n' "${{ env.TF_STATE_BUCKET }}" >> backend-config.tfvars
           printf 'key="%s"\n' "${{ matrix.environment }}/terraform.tfstate" >> backend-config.tfvars
           printf 'region="%s"\n' "${{ vars.AWS_REGION || 'us-east-1' }}" >> backend-config.tfvars
           echo "use_lockfile = true" >> backend-config.tfvars
