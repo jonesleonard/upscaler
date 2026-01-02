@@ -13,20 +13,6 @@ output "batch_service_role_name" {
 }
 
 ################################################################################
-# ECS Instance Role (for EC2 compute environments)
-################################################################################
-
-output "ecs_instance_role_arn" {
-  description = "The ARN of the ECS instance role for EC2 compute environments."
-  value       = module.ecs_instance_role.arn
-}
-
-output "ecs_instance_role_name" {
-  description = "The name of the ECS instance role."
-  value       = module.ecs_instance_role.name
-}
-
-################################################################################
 # ECS Task Execution Role
 ################################################################################
 

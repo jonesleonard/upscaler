@@ -13,7 +13,6 @@ locals {
 
   # batch role names
   batch_service_role_name      = "batch-service-role-${var.environment}"
-  ecs_instance_role_name       = "ecs-instance-role-${var.environment}"
   ecs_task_execution_role_name = "ecs-task-exec-${var.environment}"
 
   # lambda role names
@@ -315,37 +314,6 @@ module "batch_service_role" {
   }
 
   tags = merge({ Name = local.batch_service_role_name, Component = "BATCH_SERVICE" }, var.tags)
-}
-
-################################################################################
-# ECS Instance Role (for EC2 Compute Environments)
-################################################################################
-
-module "ecs_instance_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role"
-  version = "6.2.3"
-
-  name = local.ecs_instance_role_name
-
-  trust_policy_permissions = {
-    EC2 = {
-      effect = "Allow"
-      actions = [
-        "sts:AssumeRole"
-      ]
-      principals = [{
-        type        = "Service"
-        identifiers = ["ec2.amazonaws.com"]
-      }]
-    }
-  }
-
-  policies = {
-    AmazonEC2ContainerServiceforEC2Role = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-    AmazonSSMManagedInstanceCore        = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  }
-
-  tags = merge({ Name = local.ecs_instance_role_name, Component = "ECS_INSTANCE" }, var.tags)
 }
 
 ################################################################################

@@ -125,7 +125,6 @@ module "batch" {
 
   # IAM Roles from IAM module
   batch_service_role_arn      = module.iam.batch_service_role_arn
-  ecs_instance_role_arn       = module.iam.ecs_instance_role_arn
   ecs_task_execution_role_arn = module.iam.ecs_task_execution_role_arn
   job_split_role_arn          = module.iam.job_split_role_arn
   job_combine_role_arn        = module.iam.job_combine_role_arn

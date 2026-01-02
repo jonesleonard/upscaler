@@ -152,11 +152,6 @@ variable "batch_service_role_arn" {
   type        = string
 }
 
-variable "ecs_instance_role_arn" {
-  description = "The ARN of the ECS instance role for EC2 compute environments."
-  type        = string
-}
-
 variable "job_upscale_role_arn" {
   description = "The ARN of the IAM role for the upscale job."
   type        = string

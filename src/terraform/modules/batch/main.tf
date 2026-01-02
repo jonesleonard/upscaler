@@ -90,7 +90,6 @@ module "upscale" {
 
   # IAM
   batch_service_role_arn = var.batch_service_role_arn
-  ecs_instance_role_arn  = var.ecs_instance_role_arn
   job_upscale_role_arn   = var.job_upscale_role_arn
 
   # Logging

@@ -72,11 +72,6 @@ variable "batch_service_role_arn" {
   type        = string
 }
 
-variable "ecs_instance_role_arn" {
-  description = "The ARN of the ECS instance role for EC2 compute environments."
-  type        = string
-}
-
 variable "ecs_task_execution_role_arn" {
   description = "The ARN of the ECS task execution role for Fargate compute environments."
   type        = string

@@ -118,11 +118,6 @@ output "iam_batch_service_role_arn" {
   value       = module.iam.batch_service_role_arn
 }
 
-output "iam_ecs_instance_role_arn" {
-  description = "The ARN of the ECS instance role for EC2 compute environments."
-  value       = module.iam.ecs_instance_role_arn
-}
-
 output "iam_ecs_task_execution_role_arn" {
   description = "The ARN of the ECS task execution role."
   value       = module.iam.ecs_task_execution_role_arn

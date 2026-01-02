@@ -12,8 +12,11 @@ module "batch_upscale" {
   source  = "terraform-aws-modules/batch/aws"
   version = "3.0.3"
 
-  create_instance_iam_role            = false
   create_service_iam_role             = false
+  create_instance_iam_role            = true
+  instance_iam_role_name              = "batch-upscale-gpu-${var.environment}"
+  instance_iam_role_path              = "/batch/"
+  instance_iam_role_description       = "IAM role for AWS Batch EC2 GPU instances"
   create_spot_fleet_iam_role          = true
   spot_fleet_iam_role_name            = "${var.project_name}-${var.environment}-batch-spot-fleet-role"
   spot_fleet_iam_role_use_name_prefix = false
@@ -29,8 +32,6 @@ module "batch_upscale" {
         instance_types      = var.instance_types
         max_vcpus           = var.max_vcpus
         min_vcpus           = var.min_vcpus
-
-        instance_role = var.ecs_instance_role_arn
 
         security_group_ids = [var.security_group_id]
         subnets            = var.subnets
@@ -54,8 +55,6 @@ module "batch_upscale" {
         instance_types      = var.instance_types
         max_vcpus           = var.max_vcpus
         min_vcpus           = var.min_vcpus
-
-        instance_role = var.ecs_instance_role_arn
 
         security_group_ids = [var.security_group_id]
         subnets            = var.subnets
