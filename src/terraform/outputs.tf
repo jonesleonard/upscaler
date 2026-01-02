@@ -157,9 +157,19 @@ output "batch_combine_job_definition_arn" {
   value       = module.batch.combine_job_definition_arn
 }
 
+output "batch_combine_job_definition_name" {
+  description = "The name of the combine job definition."
+  value       = module.batch.combine_job_definition_name
+}
+
 output "batch_combine_job_queue_arn" {
   description = "The ARN of the combine job queue."
   value       = module.batch.combine_job_queue_arn
+}
+
+output "batch_combine_job_queue_name" {
+  description = "The name of the combine job queue."
+  value       = module.batch.combine_job_queue_name
 }
 
 output "batch_split_job_definition_arn" {
@@ -167,9 +177,19 @@ output "batch_split_job_definition_arn" {
   value       = module.batch.split_job_definition_arn
 }
 
+output "batch_split_job_definition_name" {
+  description = "The name of the split job definition."
+  value       = module.batch.split_job_definition_name
+}
+
 output "batch_split_job_queue_arn" {
   description = "The ARN of the split job queue."
   value       = module.batch.split_job_queue_arn
+}
+
+output "batch_split_job_queue_name" {
+  description = "The name of the split job queue."
+  value       = module.batch.split_job_queue_name
 }
 
 output "batch_upscale_job_definition_arn" {
@@ -177,9 +197,19 @@ output "batch_upscale_job_definition_arn" {
   value       = module.batch.upscale_job_definition_arn
 }
 
+output "batch_upscale_job_definition_name" {
+  description = "The name of the upscale job definition."
+  value       = module.batch.upscale_job_definition_name
+}
+
 output "batch_upscale_job_queue_arn" {
   description = "The ARN of the upscale job queue."
   value       = module.batch.upscale_job_queue_arn
+}
+
+output "batch_upscale_job_queue_name" {
+  description = "The name of the upscale job queue."
+  value       = module.batch.upscale_job_queue_name
 }
 
 output "batch_upscale_runpod_job_definition_arn" {
@@ -187,7 +217,17 @@ output "batch_upscale_runpod_job_definition_arn" {
   value       = module.batch.upscale_runpod_job_definition_arn
 }
 
+output "batch_upscale_runpod_job_definition_name" {
+  description = "The name of the upscale_runpod job definition."
+  value       = module.batch.upscale_runpod_job_definition_name
+}
+
 output "batch_upscale_runpod_job_queue_arn" {
   description = "The ARN of the upscale_runpod job queue."
   value       = module.batch.upscale_runpod_job_queue_arn
+}
+
+output "batch_upscale_runpod_job_queue_name" {
+  description = "The name of the upscale_runpod job queue."
+  value       = module.batch.upscale_runpod_job_queue_name
 }
