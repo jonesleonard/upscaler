@@ -12,9 +12,11 @@ module "batch_upscale" {
   source  = "terraform-aws-modules/batch/aws"
   version = "3.0.3"
 
-  create_instance_iam_role   = false
-  create_service_iam_role    = false
-  create_spot_fleet_iam_role = true
+  create_instance_iam_role            = false
+  create_service_iam_role             = false
+  create_spot_fleet_iam_role          = true
+  spot_fleet_iam_role_name            = "${var.project_name}-${var.environment}-batch-spot-fleet-role"
+  spot_fleet_iam_role_use_name_prefix = false
 
   compute_environments = {
     ec2_gpu = {
