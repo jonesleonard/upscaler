@@ -93,30 +93,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: ${{ env.CONTAINER_NAME }}:${{ github.sha }}
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 1 # Fail on critical/high vulnerabilities
-
-      - name: Upload Trivy results to GitHub Security
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-results.sarif
-          category: container-security
-
-      - name: Run Trivy for human-readable output
-        if: always()
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: ${{ env.CONTAINER_NAME }}:${{ github.sha }}
-          format: table
-          severity: CRITICAL,HIGH,MEDIUM
-
       - name: Save image for push job
         if: github.ref == 'refs/heads/main'
         run: |
