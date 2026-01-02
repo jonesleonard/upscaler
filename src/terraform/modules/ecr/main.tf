@@ -157,5 +157,5 @@ module "ecr_combiner_repository" {
     ]
   })
 
-  tags = merge({ Name = local.ecr_combiner_repository_name, Component = "COMBINE"  }, var.tags)
+  tags = merge({ Name = local.ecr_combiner_repository_name, Component = "COMBINE" }, var.tags)
 }
