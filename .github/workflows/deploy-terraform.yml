@@ -9,6 +9,11 @@ on:
         description: "Environment to deploy"
         required: true
         type: string
+      aws_region:
+        description: "AWS Region"
+        required: false
+        type: string
+        default: "us-east-1"
       terraform_version:
         description: "Terraform version to use"
         required: false
@@ -56,8 +61,6 @@ jobs:
     outputs:
       terraform_version: ${{ inputs.terraform_version }}
       working_directory: ${{ inputs.working_directory }}
-      aws_region: ${{ vars.AWS_REGION }}
-      splitter_ecr_repository_name: ${{ steps.export-terraform-outputs.outputs.ecr_splitter_repository_name }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
@@ -209,6 +212,9 @@ jobs:
     needs: plan-dev
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      aws_region: ${{ inputs.aws_region }}
+      splitter_ecr_repository_name: ${{ steps.export-terraform-outputs.outputs.ecr_splitter_repository_name }}
     environment:
       name: dev
     
