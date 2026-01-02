@@ -150,7 +150,7 @@ jobs:
 
       - name: Terraform Init
         run: |
-            cat > backend-config.tfvars
+            cat backend-config.tfvars
             terraform init -backend-config=backend-config.tfvars
 
       - name: Terraform Plan
