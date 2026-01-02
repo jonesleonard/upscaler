@@ -17,6 +17,7 @@ permissions:
   contents: read
   pull-requests: write
   id-token: write # Required for OIDC authentication with AWS
+  security-events: write # Required for security updates
 
 # Best Practice: Cancel in-progress runs on the same branch
 concurrency:
