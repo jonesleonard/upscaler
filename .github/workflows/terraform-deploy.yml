@@ -131,7 +131,7 @@ jobs:
 
       - name: Create backend config
         env:
-          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
         run: |
           printf 'bucket="%s"\n' "${{ env.TF_STATE_BUCKET }}" >> backend-config.tfvars
           printf 'key="%s"\n' "dev/terraform.tfstate" >> backend-config.tfvars
