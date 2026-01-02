@@ -85,57 +85,65 @@ module "vpc" {
 }
 
 ################################################################################
-# Batch Jobs
-#
-# NOTE: The batch module requires IAM roles that are not yet created.
-# Uncomment this block after creating the required IAM roles:
-# - batch_service_role_arn
-# - ecs_instance_role_arn
-# - ecs_task_execution_role_arn
-# - job_split_role_arn
-# - job_combine_role_arn
-# - job_upscale_role_arn
-# - job_upscale_runpod_role_arn
+# IAM Roles
 ################################################################################
 
-# module "batch" {
-#   source       = "./modules/batch"
-#   environment  = var.environment
-#   project_name = var.project_name
-#   region       = var.region
-#   tags         = local.tags
-#
-#   # Network
-#   security_group_id = module.vpc.batch_tasks_security_group_id
-#   subnets           = module.vpc.intra_subnets
-#
-#   # ECR Repository URLs
-#   splitter_repository_url = module.ecr.splitter_repository_url
-#   combiner_repository_url = module.ecr.combiner_repository_url
-#   upscaler_repository_url = module.ecr.upscaler_repository_url
-#   image_tag               = var.batch_image_tag
-#
-#   # IAM - These need to be created in a separate IAM module
-#   batch_service_role_arn      = var.batch_service_role_arn
-#   ecs_instance_role_arn       = var.batch_ecs_instance_role_arn
-#   ecs_task_execution_role_arn = var.batch_ecs_task_execution_role_arn
-#   job_split_role_arn          = var.batch_job_split_role_arn
-#   job_combine_role_arn        = var.batch_job_combine_role_arn
-#   job_upscale_role_arn        = var.batch_job_upscale_role_arn
-#   job_upscale_runpod_role_arn = var.batch_job_upscale_runpod_role_arn
-#
-#   # Compute
-#   fargate_max_vcpus  = var.batch_fargate_max_vcpus
-#   gpu_instance_types = var.batch_gpu_instance_types
-#   gpu_max_vcpus      = var.batch_gpu_max_vcpus
-#   gpu_min_vcpus      = var.batch_gpu_min_vcpus
-#
-#   # Logging
-#   log_retention_days = var.batch_log_retention_days
-#
-#   # Feature flags
-#   enable_split          = var.batch_enable_split
-#   enable_combine        = var.batch_enable_combine
-#   enable_upscale        = var.batch_enable_upscale
-#   enable_upscale_runpod = var.batch_enable_upscale_runpod
-# }
+module "iam" {
+  source       = "./modules/iam"
+  environment  = var.environment
+  project_name = var.project_name
+  region       = var.region
+  tags         = local.tags
+
+  # S3 bucket for IAM policies
+  bucket_arn = module.s3.bucket_arn
+
+  # Local testing role principals (optional)
+  local_testing_upscale_role_principals = var.iam_local_testing_principals
+}
+
+################################################################################
+# Batch Jobs
+################################################################################
+
+module "batch" {
+  source       = "./modules/batch"
+  environment  = var.environment
+  project_name = var.project_name
+  region       = var.region
+  tags         = local.tags
+
+  # Network
+  security_group_id = module.vpc.batch_tasks_security_group_id
+  subnets           = module.vpc.intra_subnets
+
+  # ECR Repository URLs
+  splitter_repository_url = module.ecr.splitter_repository_url
+  combiner_repository_url = module.ecr.combiner_repository_url
+  upscaler_repository_url = module.ecr.upscaler_repository_url
+  image_tag               = var.batch_image_tag
+
+  # IAM Roles from IAM module
+  batch_service_role_arn      = module.iam.batch_service_role_arn
+  ecs_instance_role_arn       = module.iam.ecs_instance_role_arn
+  ecs_task_execution_role_arn = module.iam.ecs_task_execution_role_arn
+  job_split_role_arn          = module.iam.job_split_role_arn
+  job_combine_role_arn        = module.iam.job_combine_role_arn
+  job_upscale_role_arn        = module.iam.job_upscale_role_arn
+  job_upscale_runpod_role_arn = module.iam.job_upscale_runpod_role_arn
+
+  # Compute
+  fargate_max_vcpus  = var.batch_fargate_max_vcpus
+  gpu_instance_types = var.batch_gpu_instance_types
+  gpu_max_vcpus      = var.batch_gpu_max_vcpus
+  gpu_min_vcpus      = var.batch_gpu_min_vcpus
+
+  # Logging
+  log_retention_days = var.batch_log_retention_days
+
+  # Feature flags
+  enable_split          = var.batch_enable_split
+  enable_combine        = var.batch_enable_combine
+  enable_upscale        = var.batch_enable_upscale
+  enable_upscale_runpod = var.batch_enable_upscale_runpod
+}

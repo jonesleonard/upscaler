@@ -110,48 +110,94 @@ output "vpc_intra_subnets" {
 }
 
 ################################################################################
-# Batch Outputs
-#
-# NOTE: These outputs are for the batch module. Uncomment when the batch
-# module is enabled in main.tf after creating the required IAM roles.
+# IAM Outputs
 ################################################################################
 
-# output "batch_combine_job_definition_arn" {
-#   description = "The ARN of the combine job definition."
-#   value       = module.batch.combine_job_definition_arn
-# }
-#
-# output "batch_combine_job_queue_arn" {
-#   description = "The ARN of the combine job queue."
-#   value       = module.batch.combine_job_queue_arn
-# }
-#
-# output "batch_split_job_definition_arn" {
-#   description = "The ARN of the split job definition."
-#   value       = module.batch.split_job_definition_arn
-# }
-#
-# output "batch_split_job_queue_arn" {
-#   description = "The ARN of the split job queue."
-#   value       = module.batch.split_job_queue_arn
-# }
-#
-# output "batch_upscale_job_definition_arn" {
-#   description = "The ARN of the upscale job definition."
-#   value       = module.batch.upscale_job_definition_arn
-# }
-#
-# output "batch_upscale_job_queue_arn" {
-#   description = "The ARN of the upscale job queue."
-#   value       = module.batch.upscale_job_queue_arn
-# }
-#
-# output "batch_upscale_runpod_job_definition_arn" {
-#   description = "The ARN of the upscale_runpod job definition."
-#   value       = module.batch.upscale_runpod_job_definition_arn
-# }
-#
-# output "batch_upscale_runpod_job_queue_arn" {
-#   description = "The ARN of the upscale_runpod job queue."
-#   value       = module.batch.upscale_runpod_job_queue_arn
-# }
+output "iam_batch_service_role_arn" {
+  description = "The ARN of the AWS Batch service role."
+  value       = module.iam.batch_service_role_arn
+}
+
+output "iam_ecs_instance_role_arn" {
+  description = "The ARN of the ECS instance role for EC2 compute environments."
+  value       = module.iam.ecs_instance_role_arn
+}
+
+output "iam_ecs_task_execution_role_arn" {
+  description = "The ARN of the ECS task execution role."
+  value       = module.iam.ecs_task_execution_role_arn
+}
+
+output "iam_job_combine_role_arn" {
+  description = "The ARN of the IAM role for the combine job."
+  value       = module.iam.job_combine_role_arn
+}
+
+output "iam_job_split_role_arn" {
+  description = "The ARN of the IAM role for the split job."
+  value       = module.iam.job_split_role_arn
+}
+
+output "iam_job_upscale_role_arn" {
+  description = "The ARN of the IAM role for the upscale job."
+  value       = module.iam.job_upscale_role_arn
+}
+
+output "iam_job_upscale_runpod_role_arn" {
+  description = "The ARN of the IAM role for the upscale RunPod job."
+  value       = module.iam.job_upscale_runpod_role_arn
+}
+
+output "iam_local_testing_upscale_role_arn" {
+  description = "The ARN of the local testing role for generating presigned URLs (if created)."
+  value       = module.iam.local_testing_upscale_role_arn
+}
+
+output "iam_presign_urls_lambda_role_arn" {
+  description = "The ARN of the Lambda role for generating presigned S3 URLs."
+  value       = module.iam.presign_urls_lambda_role_arn
+}
+
+################################################################################
+# Batch Outputs
+################################################################################
+
+output "batch_combine_job_definition_arn" {
+  description = "The ARN of the combine job definition."
+  value       = module.batch.combine_job_definition_arn
+}
+
+output "batch_combine_job_queue_arn" {
+  description = "The ARN of the combine job queue."
+  value       = module.batch.combine_job_queue_arn
+}
+
+output "batch_split_job_definition_arn" {
+  description = "The ARN of the split job definition."
+  value       = module.batch.split_job_definition_arn
+}
+
+output "batch_split_job_queue_arn" {
+  description = "The ARN of the split job queue."
+  value       = module.batch.split_job_queue_arn
+}
+
+output "batch_upscale_job_definition_arn" {
+  description = "The ARN of the upscale job definition."
+  value       = module.batch.upscale_job_definition_arn
+}
+
+output "batch_upscale_job_queue_arn" {
+  description = "The ARN of the upscale job queue."
+  value       = module.batch.upscale_job_queue_arn
+}
+
+output "batch_upscale_runpod_job_definition_arn" {
+  description = "The ARN of the upscale_runpod job definition."
+  value       = module.batch.upscale_runpod_job_definition_arn
+}
+
+output "batch_upscale_runpod_job_queue_arn" {
+  description = "The ARN of the upscale_runpod job queue."
+  value       = module.batch.upscale_runpod_job_queue_arn
+}
