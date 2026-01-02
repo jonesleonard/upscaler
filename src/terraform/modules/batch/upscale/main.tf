@@ -12,10 +12,9 @@ module "batch_upscale" {
   source  = "terraform-aws-modules/batch/aws"
   version = "3.0.3"
 
-  depends_on = [aws_cloudwatch_log_group.this]
-
-  create_instance_iam_role = false
-  create_service_iam_role  = false
+  create_instance_iam_role   = false
+  create_service_iam_role    = false
+  create_spot_fleet_iam_role = true
 
   compute_environments = {
     ec2_gpu = {
@@ -123,7 +122,7 @@ module "batch_upscale" {
       })
 
       attempt_duration_seconds = var.attempt_duration_seconds
-      retry_strategy           = { attempts = var.retry_attempts }
+      retry_strategy           = { attempts = 2 }
 
       tags = merge(var.tags, {
         Name      = local.job_definition_name
