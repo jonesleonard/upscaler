@@ -138,3 +138,105 @@ variable "vpc_flow_log_traffic_type" {
   type        = string
   default     = "ALL"
 }
+
+################################################################################
+# Batch Configuration
+#
+# NOTE: These variables are for the batch module. Uncomment when the batch
+# module is enabled in main.tf after creating the required IAM roles.
+################################################################################
+
+# variable "batch_ecs_instance_role_arn" {
+#   description = "The ARN of the ECS instance role for EC2 compute environments."
+#   type        = string
+# }
+#
+# variable "batch_ecs_task_execution_role_arn" {
+#   description = "The ARN of the ECS task execution role for Fargate compute environments."
+#   type        = string
+# }
+#
+# variable "batch_enable_combine" {
+#   description = "Enable the combine Batch job module."
+#   type        = bool
+#   default     = true
+# }
+#
+# variable "batch_enable_split" {
+#   description = "Enable the split Batch job module."
+#   type        = bool
+#   default     = true
+# }
+#
+# variable "batch_enable_upscale" {
+#   description = "Enable the upscale (GPU EC2) Batch job module."
+#   type        = bool
+#   default     = true
+# }
+#
+# variable "batch_enable_upscale_runpod" {
+#   description = "Enable the upscale_runpod (Fargate API) Batch job module."
+#   type        = bool
+#   default     = false
+# }
+#
+# variable "batch_fargate_max_vcpus" {
+#   description = "Maximum number of vCPUs for Fargate compute environments."
+#   type        = number
+#   default     = 16
+# }
+#
+# variable "batch_gpu_instance_types" {
+#   description = "List of EC2 instance types for GPU compute."
+#   type        = list(string)
+#   default     = ["g4dn.xlarge", "g4dn.2xlarge"]
+# }
+#
+# variable "batch_gpu_max_vcpus" {
+#   description = "Maximum number of vCPUs for GPU EC2 compute environments."
+#   type        = number
+#   default     = 32
+# }
+#
+# variable "batch_gpu_min_vcpus" {
+#   description = "Minimum number of vCPUs for GPU EC2 compute environments."
+#   type        = number
+#   default     = 0
+# }
+#
+# variable "batch_image_tag" {
+#   description = "The tag of the container images to use for Batch job definitions."
+#   type        = string
+#   default     = "latest"
+# }
+#
+# variable "batch_job_combine_role_arn" {
+#   description = "The ARN of the IAM role for the combine job."
+#   type        = string
+# }
+#
+# variable "batch_job_split_role_arn" {
+#   description = "The ARN of the IAM role for the split job."
+#   type        = string
+# }
+#
+# variable "batch_job_upscale_role_arn" {
+#   description = "The ARN of the IAM role for the upscale job."
+#   type        = string
+# }
+#
+# variable "batch_job_upscale_runpod_role_arn" {
+#   description = "The ARN of the IAM role for the upscale_runpod job."
+#   type        = string
+# }
+#
+# variable "batch_log_retention_days" {
+#   description = "Number of days to retain CloudWatch logs for Batch jobs."
+#   type        = number
+#   default     = 7
+# }
+#
+# variable "batch_service_role_arn" {
+#   description = "The ARN of the Batch service role for EC2 compute environments."
+#   type        = string
+# }
