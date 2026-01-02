@@ -5,11 +5,27 @@
 data "aws_caller_identity" "current" {}
 
 locals {
+  # job role names
+  job_split_role_name          = "job-split-role-${var.environment}"
+  job_upscale_role_name        = "job-upscale-role-${var.environment}"
+  job_combine_role_name        = "job-combine-role-${var.environment}"
+  job_upscale_runpod_role_name = "job-upscale-runpod-role-${var.environment}"
+
+  # batch role names
+  batch_service_role_name      = "batch-service-role-${var.environment}"
+  ecs_instance_role_name       = "ecs-instance-role-${var.environment}"
+  ecs_task_execution_role_name = "ecs-task-exec-${var.environment}"
+
+  # lambda role names
+  presign_urls_lambda_role_name = "lambda-presign-url-role-${var.environment}"
+
+  # S3 bucket ownership condition to ensure the IAM role only accesses resources in the correct account
   s3_bucket_ownership_condition = [{
     test     = "StringEquals"
     variable = "s3:ResourceAccount"
     values   = [data.aws_caller_identity.current.account_id]
   }]
+
   # to receive a more informative 404 Not Found error if the object is indeed missing instead of the generic 403 Access Denied
   list_bucket_statement_ownership_condition = {
     effect    = "Allow"
@@ -17,6 +33,7 @@ locals {
     resources = [var.bucket_arn]
     condition = local.s3_bucket_ownership_condition
   }
+
   # to receive a more informative 404 Not Found error if the object is indeed missing instead of the generic 403 Access Denied
   list_bucket_statement = {
     effect    = "Allow"
@@ -35,7 +52,7 @@ module "job_split_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name                 = "job-split-role-${var.environment}"
+  name                 = local.job_split_role_name
   create_inline_policy = true
 
   trust_policy_permissions = {
@@ -88,7 +105,7 @@ module "job_split_role" {
     }
   }
 
-  tags = var.tags
+  tags = merge({ Name = local.job_split_role_name, Component = "SPLIT" }, var.tags)
 }
 
 ################################################################################
@@ -128,7 +145,7 @@ module "job_upscale_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name                 = "job-upscale-role-${var.environment}"
+  name                 = local.job_upscale_role_name
   create_inline_policy = true
 
   trust_policy_permissions = {
@@ -158,41 +175,7 @@ module "job_upscale_role" {
 
   inline_policy_permissions = local.inline_policy_permissions_upscale
 
-  tags = var.tags
-}
-
-################################################################################
-# Local Upscale Testing IAM Role
-################################################################################
-
-# Role for local development to generate presigned URLs for RunPod testing
-# Same S3 permissions as job_upscale_role but assumable by IAM users/roles
-
-module "local_testing_upscale_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role"
-  version = "6.2.3"
-
-  count = length(var.local_testing_upscale_role_principals) > 0 ? 1 : 0
-
-  name                 = "local-testing-role-${var.environment}"
-  create_inline_policy = true
-
-  trust_policy_permissions = {
-    LocalDevelopers = {
-      effect = "Allow"
-      actions = [
-        "sts:AssumeRole"
-      ]
-      principals = [{
-        type        = "AWS"
-        identifiers = var.local_testing_upscale_role_principals
-      }]
-    }
-  }
-
-  inline_policy_permissions = local.inline_policy_permissions_upscale
-
-  tags = var.tags
+  tags = merge({ Name = local.job_upscale_role_name, Component = "UPSCALE" }, var.tags)
 }
 
 ################################################################################
@@ -206,7 +189,7 @@ module "job_upscale_runpod_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name                 = "job-upscale-runpod-role-${var.environment}"
+  name                 = local.job_upscale_runpod_role_name
   create_inline_policy = true
 
   trust_policy_permissions = {
@@ -236,7 +219,7 @@ module "job_upscale_runpod_role" {
 
   inline_policy_permissions = local.inline_policy_permissions_upscale
 
-  tags = var.tags
+  tags = merge({ Name = local.job_upscale_runpod_role_name, Component = "UPSCALE_RUNPOD" }, var.tags)
 }
 
 ################################################################################
@@ -249,7 +232,7 @@ module "job_combine_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name                 = "job-combine-role-${var.environment}"
+  name                 = local.job_combine_role_name
   create_inline_policy = true
 
   trust_policy_permissions = {
@@ -301,7 +284,7 @@ module "job_combine_role" {
     }
   }
 
-  tags = var.tags
+  tags = merge({ Name = local.job_combine_role_name, Component = "COMBINE" }, var.tags)
 }
 
 ################################################################################
@@ -312,7 +295,7 @@ module "batch_service_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name = "batch-service-role-${var.environment}"
+  name = local.batch_service_role_name
 
   trust_policy_permissions = {
     Batch = {
@@ -331,7 +314,7 @@ module "batch_service_role" {
     AWSBatchServiceRole = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
   }
 
-  tags = var.tags
+  tags = merge({ Name = local.batch_service_role_name, Component = "BATCH_SERVICE" }, var.tags)
 }
 
 ################################################################################
@@ -342,7 +325,7 @@ module "ecs_instance_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name = "ecs-instance-role-${var.environment}"
+  name = local.ecs_instance_role_name
 
   trust_policy_permissions = {
     EC2 = {
@@ -362,7 +345,7 @@ module "ecs_instance_role" {
     AmazonSSMManagedInstanceCore        = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }
 
-  tags = var.tags
+  tags = merge({ Name = local.ecs_instance_role_name, Component = "ECS_INSTANCE" }, var.tags)
 }
 
 ################################################################################
@@ -373,7 +356,7 @@ module "ecs_task_execution_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name = "ecs-task-exec-${var.environment}"
+  name = local.ecs_task_execution_role_name
 
   trust_policy_permissions = {
     TrustRoleAndServiceToAssume = {
@@ -404,7 +387,7 @@ module "ecs_task_execution_role" {
     AmazonECSTaskExecutionRolePolicy   = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
   }
 
-  tags = var.tags
+  tags = merge({ Name = local.ecs_task_execution_role_name, Component = "ECS_TASK_EXECUTION" }, var.tags)
 }
 
 
@@ -416,7 +399,7 @@ module "presign_urls_lambda_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role"
   version = "6.2.3"
 
-  name                 = "lambda-presign-url-role-${var.environment}"
+  name                 = local.presign_urls_lambda_role_name
   create_inline_policy = true
 
   trust_policy_permissions = {
@@ -462,5 +445,5 @@ module "presign_urls_lambda_role" {
     }
   }
 
-  tags = var.tags
+  tags = merge({ Name = local.presign_urls_lambda_role_name, Component = "LAMBDA_PRESIGN_URLS" }, var.tags)
 }

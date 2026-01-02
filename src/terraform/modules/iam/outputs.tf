@@ -97,20 +97,6 @@ output "job_upscale_runpod_role_name" {
 }
 
 ################################################################################
-# Local Testing Role (optional)
-################################################################################
-
-output "local_testing_upscale_role_arn" {
-  description = "The ARN of the local testing role for generating presigned URLs (if created)."
-  value       = length(module.local_testing_upscale_role) > 0 ? module.local_testing_upscale_role[0].iam_role_arn : null
-}
-
-output "local_testing_upscale_role_name" {
-  description = "The name of the local testing role (if created)."
-  value       = length(module.local_testing_upscale_role) > 0 ? module.local_testing_upscale_role[0].iam_role_name : null
-}
-
-################################################################################
 # Lambda Presign URLs Role
 ################################################################################
 
