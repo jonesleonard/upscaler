@@ -135,7 +135,7 @@ jobs:
 
       - name: Create backend config
         run: |
-          printf 'bucket="%s"\n' "${{ secrets[format('TF_STATE_BUCKET_{0}', matrix.environment)] }}" >> backend-config.tfvars
+          printf 'bucket="%s"\n' "terraform-upscale-546866187043" >> backend-config.tfvars
           printf 'key="%s"\n' "${{ matrix.environment }}/terraform.tfstate" >> backend-config.tfvars
           printf 'region="%s"\n' "${{ vars.AWS_REGION }}" >> backend-config.tfvars
           printf 'use_lockfile="%s"\n' true >> backend-config.tfvars
