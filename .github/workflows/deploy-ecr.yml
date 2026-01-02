@@ -1,20 +1,30 @@
-# .github/workflows/container-splitter-deploy.yml
+# .github/workflows/deploy-ecr.yml
 
-name: Build and Deploy Splitter Container
+name: Build and Deploy ECR Container
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "src/containers/splitter/**"
-      - ".github/workflows/container-splitter-deploy.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "src/containers/splitter/**"
-      - ".github/workflows/container-splitter-deploy.yml"
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: string
+      ecr_repository_name:
+        description: "ECR repository name"
+        required: true
+        type: string
+      container_name:
+        description: "Name of the container"
+        required: true
+        type: string
+      container_path:
+        description: "Path to the container source code"
+        required: true
+        type: string
+    secrets:
+      AWS_ROLE_ARN:
+        description: "The ARN of the AWS Role to assume for deployment"
+        required: true
   workflow_dispatch:
     inputs:
       environment:
@@ -25,6 +35,18 @@ on:
           - dev
           - staging
           - prod
+      ecr_repository_name:
+        description: "ECR repository name"
+        required: true
+        type: string
+      container_name:
+        description: "Name of the container"
+        required: true
+        type: string
+      container_path:
+        description: "Path to the container source code"
+        required: true
+        type: string
 
 # Best Practice: Set default permissions to read-only for security
 permissions:
@@ -38,17 +60,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true # Safe to cancel container builds
 
-env:
-  CONTAINER_NAME: splitter
-  CONTAINER_PATH: ./src/containers/splitter
-  AWS_REGION: us-east-1 # Override with secrets/vars as needed
-
 jobs:
   # ============================================================================
-  # Build and Scan Container Image
+  # Build Container
   # ============================================================================
   build:
-    name: Build & Scan Container
+    name: Build Container
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
@@ -68,7 +85,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.CONTAINER_NAME }}
+          images: ${{ inputs.container_name }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -81,8 +98,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.CONTAINER_PATH }}
-          file: ${{ env.CONTAINER_PATH }}/Dockerfile
+          context: ${{ inputs.container_path }}
+          file: ${{ inputs.container_path }}/Dockerfile
           push: false
           load: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -96,7 +113,7 @@ jobs:
       - name: Save image for push job
         if: github.ref == 'refs/heads/main'
         run: |
-          docker save ${{ env.CONTAINER_NAME }}:${{ github.sha }} | gzip > /tmp/container-image.tar.gz
+          docker save ${{ inputs.container_name }}:${{ github.sha }} | gzip > /tmp/container-image.tar.gz
 
       - name: Upload image artifact
         if: github.ref == 'refs/heads/main'
@@ -113,7 +130,7 @@ jobs:
           script: |
             const output = `#### Container Build & Security Scan 🐳🔒
             
-            **Image:** \`${{ env.CONTAINER_NAME }}:${{ github.sha }}\`
+            **Image:** \`${{ inputs.container_name }}:${{ github.sha }}\`
             **Digest:** \`${{ steps.build.outputs.digest }}\`
             
             ✅ Container image built successfully
@@ -130,74 +147,74 @@ jobs:
               body: output
             })
 
-#   # ============================================================================
-#   # Push to ECR (Dev Environment)
-#   # ============================================================================
-#   push-dev:
-#     name: Push to ECR (Dev)
-#     needs: build
-#     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-#     runs-on: ubuntu-latest
-#     environment:
-#       name: dev
+  # ============================================================================
+  # Push to ECR (Dev Environment)
+  # ============================================================================
+  push-dev:
+    name: Push to ECR (Dev)
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
     
-#     outputs:
-#       ecr-image-uri: ${{ steps.push.outputs.image-uri }}
+    outputs:
+      ecr-image-uri: ${{ steps.push.outputs.image-uri }}
     
-#     steps:
-#       - name: Download image artifact
-#         uses: actions/download-artifact@v7
-#         with:
-#           name: container-image-${{ github.sha }}
-#           path: /tmp
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: container-image-${{ github.sha }}
+          path: /tmp
 
-#       - name: Load Docker image
-#         run: |
-#           docker load < /tmp/container-image.tar.gz
-#           docker images
+      - name: Load Docker image
+        run: |
+          docker load < /tmp/container-image.tar.gz
+          docker images
 
-#       - name: Configure AWS Credentials (OIDC)
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-#           aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
-#           role-session-name: GitHubActions-Container-Deploy-Dev
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: GitHubActions-Container-Deploy-Dev
 
-#       - name: Login to Amazon ECR
-#         id: login-ecr
-#         uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-#       - name: Tag and push image to ECR
-#         id: push
-#         env:
-#           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-#           ECR_REPOSITORY: ${{ vars.PROJECT_NAME || 'upscaler' }}-splitter-dev-ecr
-#           IMAGE_TAG: ${{ github.sha }}
-#         run: |
-#           # Tag with SHA
-#           docker tag ${{ env.CONTAINER_NAME }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-#           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Tag and push image to ECR
+        id: push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Tag with SHA
+          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           
-#           # Tag with 'latest'
-#           docker tag ${{ env.CONTAINER_NAME }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:latest
-#           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          # Tag with 'latest'
+          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-#           # Tag with short SHA
-#           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-#           docker tag ${{ env.CONTAINER_NAME }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
-#           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
+          # Tag with short SHA
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
           
-#           # Output full image URI
-#           IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-#           echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-#           echo "Pushed image: ${IMAGE_URI}"
+          # Output full image URI
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "Pushed image: ${IMAGE_URI}"
 
-#       - name: Scan image in ECR
-#         run: |
-#           aws ecr start-image-scan \
-#             --repository-name ${{ vars.PROJECT_NAME || 'upscaler' }}-splitter-dev-ecr \
-#             --image-id imageTag=${{ github.sha }} \
-#             --region ${{ vars.AWS_REGION || env.AWS_REGION }} || true
+      - name: Scan image in ECR
+        run: |
+          aws ecr start-image-scan \
+            --repository-name ${{ vars.PROJECT_NAME || 'upscaler' }}-splitter-dev-ecr \
+            --image-id imageTag=${{ github.sha }} \
+            --region ${{ vars.AWS_REGION }} || true
 
   # ============================================================================
   # Update Batch Job Definition

@@ -3,18 +3,22 @@
 name: Terraform Deploy
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "src/terraform/**"
-      - ".github/workflows/terraform-deploy.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "src/terraform/**"
-      - ".github/workflows/terraform-deploy.yml"
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        type: string
+      terraform_version:
+        description: "Terraform version to use"
+        required: false
+        type: string
+        default: "1.14.3"
+      working_directory:
+        description: "Working directory for Terraform"
+        required: false
+        type: string
+        default: "./src/terraform"
   workflow_dispatch:
     inputs:
       environment:
@@ -23,6 +27,16 @@ on:
         type: choice
         options:
           - dev
+      terraform_version:
+        description: "Terraform version to use"
+        required: false
+        type: string
+        default: "1.14.3"
+      working_directory:
+        description: "Working directory for Terraform"
+        required: false
+        type: string
+        default: "./src/terraform"
 
 # Best Practice: Set default permissions to read-only for security
 permissions:
@@ -35,17 +49,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.environment || 'dev' }}
   cancel-in-progress: false # Don't cancel Terraform operations to avoid state locks
 
-env:
-  TERRAFORM_VERSION: "1.14.3"
-  WORKING_DIRECTORY: "./src/terraform"
-
 jobs:
   validate:
     name: Validate & Lint
     runs-on: ubuntu-latest
+    outputs:
+      terraform_version: ${{ inputs.terraform_version }}
+      working_directory: ${{ inputs.working_directory }}
+      aws_region: ${{ vars.AWS_REGION }}
+      splitter_ecr_repository_name: ${{ steps.export-terraform-outputs.outputs.ecr_splitter_repository_name }}
     defaults:
       run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
+        working-directory: ${{ inputs.working_directory }}
     
     steps:
       - name: Checkout code
@@ -54,7 +69,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_version: ${{ inputs.terraform_version }}
 
       - name: Terraform Format Check
         id: fmt
@@ -103,7 +118,7 @@ jobs:
       name: dev
     defaults:
       run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
+        working-directory: ${{ inputs.working_directory }}
     
     steps:
       - name: Checkout code
@@ -112,7 +127,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_version: ${{ inputs.terraform_version }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -154,7 +169,7 @@ jobs:
         if: steps.plan.outcome == 'success'
         with:
           name: tfplan-dev
-          path: ${{ env.WORKING_DIRECTORY }}/tfplan-dev
+          path: ${{ inputs.working_directory }}/tfplan-dev
           retention-days: 5
 
       - name: Comment PR with plan
@@ -163,7 +178,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const planOutput = fs.readFileSync('${{ env.WORKING_DIRECTORY }}/plan-output.txt', 'utf8');
+            const planOutput = fs.readFileSync('${{ inputs.working_directory }}/plan-output.txt', 'utf8');
             const truncatedPlan = planOutput.length > 65000 ? planOutput.substring(0, 65000) + '\n\n... (truncated)' : planOutput;
             
             const output = `#### Terraform Plan 📖 - Environment: \`dev\`
@@ -199,7 +214,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
+        working-directory: ${{ inputs.working_directory }}
     
     steps:
       - name: Checkout code
@@ -208,7 +223,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_version: ${{ inputs.terraform_version }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -244,7 +259,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan-dev
-          path: ${{ env.WORKING_DIRECTORY }}
+          path: ${{ inputs.working_directory }}
 
       - name: Terraform Apply
         id: apply
@@ -259,7 +274,20 @@ jobs:
         if: steps.apply.outcome == 'success'
         with:
           name: terraform-outputs-dev
-          path: ${{ env.WORKING_DIRECTORY }}/terraform-outputs.json
+          path: ${{ inputs.working_directory }}/terraform-outputs.json
           retention-days: 1
+
+      - name: Export all Terraform outputs as step outputs
+        id: export-terraform-outputs
+        run: |
+          for key in $(jq -r 'keys[]' terraform-outputs.json); do
+            is_sensitive=$(jq -r --arg k "$key" '.[$k].sensitive' terraform-outputs.json)
+            if [ "$is_sensitive" = "true" ]; then
+              continue
+            fi
+            value=$(jq -r --arg k "$key" '.[$k].value' terraform-outputs.json)
+            safe_key=$(echo "$key" | tr -c 'A-Za-z0-9_' '_')
+            echo "$safe_key=$value" >> $GITHUB_OUTPUT
+          done
 
   

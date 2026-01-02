@@ -50,14 +50,11 @@ output "s3_logging_bucket_id" {
 # ECR Repository Outputs
 ################################################################################
 
-output "ecr_combiner_repository_arn" {
-  description = "The ARN of the combiner ECR repository."
-  value       = module.ecr.combiner_repository_arn
-}
+# SPLITTER REPOSITORY
 
-output "ecr_combiner_repository_url" {
-  description = "The URL of the combiner ECR repository."
-  value       = module.ecr.combiner_repository_url
+output "ecr_splitter_repository_name" {
+  description = "The name of the splitter ECR repository."
+  value       = module.ecr.splitter_repository_name
 }
 
 output "ecr_splitter_repository_arn" {
@@ -68,6 +65,30 @@ output "ecr_splitter_repository_arn" {
 output "ecr_splitter_repository_url" {
   description = "The URL of the splitter ECR repository."
   value       = module.ecr.splitter_repository_url
+}
+
+# COMBINER REPOSITORY
+
+output "ecr_combiner_repository_name" {
+  description = "The name of the combiner ECR repository."
+  value       = module.ecr.combiner_repository_name
+}
+
+output "ecr_combiner_repository_arn" {
+  description = "The ARN of the combiner ECR repository."
+  value       = module.ecr.combiner_repository_arn
+}
+
+output "ecr_combiner_repository_url" {
+  description = "The URL of the combiner ECR repository."
+  value       = module.ecr.combiner_repository_url
+}
+
+# UPSCALER REPOSITORY
+
+output "ecr_upscaler_repository_name" {
+  description = "The name of the upscaler ECR repository."
+  value       = module.ecr.upscaler_repository_name
 }
 
 output "ecr_upscaler_repository_arn" {

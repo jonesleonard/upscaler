@@ -1,0 +1,40 @@
+# .github/workflows/deploy.yml
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Best Practice: Set default permissions to read-only for security
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write # Required for OIDC authentication with AWS
+
+# Best Practice: Cancel in-progress runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+    deploy-terraform:
+        name: Deploy Terraform
+        uses: ./.github/workflows/deploy-terraform.yml
+        with:
+          environment: dev
+          terraform_version: "1.14.3"
+          working_directory: "./src/terraform"
+    deploy-ecr-splitter:
+        name: Deploy Splitter ECR Image
+        uses: ./.github/workflows/deploy-ecr.yml
+        needs: deploy-terraform
+        with:
+          environment: dev
+          aws_region: ${{ needs.deploy-terraform.outputs.aws_region }}
+          ecr_repository_name: ${{ needs.deploy-terraform.outputs.splitter_ecr_repository_name }}
