@@ -132,11 +132,15 @@ jobs:
           role-session-name: GitHubActions-Terraform-${{ matrix.environment }}
 
       - name: Create backend config
+        env:
+          TF_STATE_BUCKET: ${{ secrets[format('TF_STATE_BUCKET_{0}', matrix.environment)] }}
         run: |
-          printf 'bucket="%s"\n' "terraform-upscale-546866187043" >> backend-config.tfvars
-          printf 'key="%s"\n' "${{ matrix.environment }}/terraform.tfstate" >> backend-config.tfvars
-          printf 'region="%s"\n' "${{ vars.AWS_REGION }}" >> backend-config.tfvars
-          printf 'use_lockfile="%s"\n' true >> backend-config.tfvars
+          cat > backend-config.tfvars << EOF
+          bucket       = "${{ env.TF_STATE_BUCKET }}"
+          key          = "${{ matrix.environment }}/terraform.tfstate"
+          region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
+          use_lockfile = true
+          EOF
           cat backend-config.tfvars
         shell: bash
 
