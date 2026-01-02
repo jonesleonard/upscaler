@@ -58,3 +58,28 @@ module "ecr" {
   tagged_image_count  = var.ecr_tagged_image_count
   untagged_image_days = var.ecr_untagged_image_days
 }
+
+################################################################################
+# VPC & Networking
+################################################################################
+
+module "vpc" {
+  source       = "./modules/vpc"
+  environment  = var.environment
+  project_name = var.project_name
+  tags         = local.tags
+
+  # VPC configuration
+  az_redundancy_level     = var.vpc_az_redundancy_level
+  vpc_cidr                = var.vpc_cidr
+  enable_flow_logs        = var.vpc_enable_flow_logs
+  flow_log_retention_days = var.vpc_flow_log_retention_days
+  flow_log_traffic_type   = var.vpc_flow_log_traffic_type
+
+  # VPC endpoint configuration
+  ecr_resource_arns = [
+    module.ecr.splitter_repository_arn,
+    module.ecr.upscaler_repository_arn,
+    module.ecr.combiner_repository_arn
+  ]
+}

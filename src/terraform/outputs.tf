@@ -79,3 +79,32 @@ output "ecr_upscaler_repository_url" {
   description = "The URL of the upscaler ECR repository."
   value       = module.ecr.upscaler_repository_url
 }
+
+################################################################################
+# VPC Outputs
+################################################################################
+
+output "vpc_arn" {
+  description = "The ARN of the VPC."
+  value       = module.vpc.vpc_arn
+}
+
+output "vpc_batch_tasks_security_group_id" {
+  description = "The ID of the security group for Batch tasks."
+  value       = module.vpc.batch_tasks_security_group_id
+}
+
+output "vpc_cidr_block" {
+  description = "The CIDR block of the VPC."
+  value       = module.vpc.vpc_cidr_block
+}
+
+output "vpc_id" {
+  description = "The ID of the VPC."
+  value       = module.vpc.vpc_id
+}
+
+output "vpc_intra_subnets" {
+  description = "List of IDs of intra subnets in the VPC."
+  value       = module.vpc.intra_subnets
+}

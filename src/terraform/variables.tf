@@ -104,3 +104,37 @@ variable "ecr_untagged_image_days" {
   type        = number
   default     = 7
 }
+
+################################################################################
+# VPC Configuration
+################################################################################
+
+variable "vpc_az_redundancy_level" {
+  description = "The number of availability zones to use for VPC redundancy. Must be at least 2 for high availability."
+  type        = number
+  default     = 2
+}
+
+variable "vpc_cidr" {
+  description = "The CIDR block for the VPC. Must be a valid IPv4 CIDR block."
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "vpc_enable_flow_logs" {
+  description = "Enable VPC Flow Logs for network traffic monitoring and troubleshooting."
+  type        = bool
+  default     = true
+}
+
+variable "vpc_flow_log_retention_days" {
+  description = "Number of days to retain VPC Flow Logs in CloudWatch."
+  type        = number
+  default     = 30
+}
+
+variable "vpc_flow_log_traffic_type" {
+  description = "The type of traffic to capture in VPC Flow Logs. Valid values: ACCEPT, REJECT, ALL."
+  type        = string
+  default     = "ALL"
+}
