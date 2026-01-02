@@ -148,11 +148,6 @@ output "iam_job_upscale_runpod_role_arn" {
   value       = module.iam.job_upscale_runpod_role_arn
 }
 
-output "iam_local_testing_upscale_role_arn" {
-  description = "The ARN of the local testing role for generating presigned URLs (if created)."
-  value       = module.iam.local_testing_upscale_role_arn
-}
-
 output "iam_presign_urls_lambda_role_arn" {
   description = "The ARN of the Lambda role for generating presigned S3 URLs."
   value       = module.iam.presign_urls_lambda_role_arn

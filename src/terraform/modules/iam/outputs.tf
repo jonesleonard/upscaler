@@ -4,12 +4,12 @@
 
 output "batch_service_role_arn" {
   description = "The ARN of the AWS Batch service role."
-  value       = module.batch_service_role.iam_role_arn
+  value       = module.batch_service_role.arn
 }
 
 output "batch_service_role_name" {
   description = "The name of the AWS Batch service role."
-  value       = module.batch_service_role.iam_role_name
+  value       = module.batch_service_role.name
 }
 
 ################################################################################
@@ -18,12 +18,12 @@ output "batch_service_role_name" {
 
 output "ecs_instance_role_arn" {
   description = "The ARN of the ECS instance role for EC2 compute environments."
-  value       = module.ecs_instance_role.iam_role_arn
+  value       = module.ecs_instance_role.arn
 }
 
 output "ecs_instance_role_name" {
   description = "The name of the ECS instance role."
-  value       = module.ecs_instance_role.iam_role_name
+  value       = module.ecs_instance_role.name
 }
 
 ################################################################################
@@ -32,12 +32,12 @@ output "ecs_instance_role_name" {
 
 output "ecs_task_execution_role_arn" {
   description = "The ARN of the ECS task execution role."
-  value       = module.ecs_task_execution_role.iam_role_arn
+  value       = module.ecs_task_execution_role.arn
 }
 
 output "ecs_task_execution_role_name" {
   description = "The name of the ECS task execution role."
-  value       = module.ecs_task_execution_role.iam_role_name
+  value       = module.ecs_task_execution_role.name
 }
 
 ################################################################################
@@ -46,12 +46,12 @@ output "ecs_task_execution_role_name" {
 
 output "job_split_role_arn" {
   description = "The ARN of the IAM role for the split job."
-  value       = module.job_split_role.iam_role_arn
+  value       = module.job_split_role.arn
 }
 
 output "job_split_role_name" {
   description = "The name of the split job IAM role."
-  value       = module.job_split_role.iam_role_name
+  value       = module.job_split_role.name
 }
 
 ################################################################################
@@ -60,12 +60,12 @@ output "job_split_role_name" {
 
 output "job_upscale_role_arn" {
   description = "The ARN of the IAM role for the upscale job."
-  value       = module.job_upscale_role.iam_role_arn
+  value       = module.job_upscale_role.arn
 }
 
 output "job_upscale_role_name" {
   description = "The name of the upscale job IAM role."
-  value       = module.job_upscale_role.iam_role_name
+  value       = module.job_upscale_role.name
 }
 
 ################################################################################
@@ -74,12 +74,12 @@ output "job_upscale_role_name" {
 
 output "job_combine_role_arn" {
   description = "The ARN of the IAM role for the combine job."
-  value       = module.job_combine_role.iam_role_arn
+  value       = module.job_combine_role.arn
 }
 
 output "job_combine_role_name" {
   description = "The name of the combine job IAM role."
-  value       = module.job_combine_role.iam_role_name
+  value       = module.job_combine_role.name
 }
 
 ################################################################################
@@ -88,12 +88,12 @@ output "job_combine_role_name" {
 
 output "job_upscale_runpod_role_arn" {
   description = "The ARN of the IAM role for the upscale RunPod job."
-  value       = module.job_upscale_runpod_role.iam_role_arn
+  value       = module.job_upscale_runpod_role.arn
 }
 
 output "job_upscale_runpod_role_name" {
   description = "The name of the upscale RunPod job IAM role."
-  value       = module.job_upscale_runpod_role.iam_role_name
+  value       = module.job_upscale_runpod_role.name
 }
 
 ################################################################################
@@ -102,10 +102,10 @@ output "job_upscale_runpod_role_name" {
 
 output "presign_urls_lambda_role_arn" {
   description = "The ARN of the Lambda role for generating presigned S3 URLs."
-  value       = module.presign_urls_lambda_role.iam_role_arn
+  value       = module.presign_urls_lambda_role.arn
 }
 
 output "presign_urls_lambda_role_name" {
   description = "The name of the Lambda presign URLs role."
-  value       = module.presign_urls_lambda_role.iam_role_name
+  value       = module.presign_urls_lambda_role.name
 }
