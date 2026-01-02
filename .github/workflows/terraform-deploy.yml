@@ -149,7 +149,9 @@ jobs:
           EOF
 
       - name: Terraform Init
-        run: terraform init -backend-config=backend-config.tfvars
+        run: |
+            cat > backend-config.tfvars
+            terraform init -backend-config=backend-config.tfvars
 
       - name: Terraform Plan
         id: plan
