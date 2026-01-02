@@ -2,8 +2,12 @@
 # Resource Group
 ################################################################################
 
+locals {
+  main_resource_group_name = "${var.project_name}-${var.environment}"
+}
+
 resource "aws_resourcegroups_group" "project" {
-  name        = "${var.project_name}-${var.environment}"
+  name        = local.main_resource_group_name
   description = "All resources for ${var.project_name} ${var.environment} environment"
 
   resource_query {
@@ -22,5 +26,5 @@ resource "aws_resourcegroups_group" "project" {
     })
   }
 
-  tags = var.tags
+  tags = merge({ Name = local.main_resource_group_name }, var.tags)
 }
