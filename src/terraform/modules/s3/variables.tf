@@ -13,20 +13,30 @@ variable "project_name" {
   type        = string
 }
 
-variable "region" {
-  description = "The AWS region where resources will be provisioned."
-  type        = string
-  default     = "us-east-1"
+variable "tags" {
+  description = "A map of tags to add to all resources."
+  type        = map(string)
+  default     = {}
 }
 
 ################################################################################
-# S3 Configuration
+# CORS Configuration
 ################################################################################
 
 variable "cors_allowed_origins" {
-  description = "List of allowed origins for CORS configuration on S3. Use [\"*\"] for development or specific domains for production."
+  description = "List of allowed origins for CORS configuration. Use [\"*\"] for development or specific domains for production."
   type        = list(string)
   default     = ["*"]
+}
+
+################################################################################
+# Lifecycle Configuration
+################################################################################
+
+variable "abort_multipart_upload_days" {
+  description = "Number of days after which incomplete multipart uploads are aborted."
+  type        = number
+  default     = 7
 }
 
 variable "final_files_glacier_transition_days" {
@@ -36,19 +46,19 @@ variable "final_files_glacier_transition_days" {
 }
 
 variable "log_retention_days" {
-  description = "Number of days to retain S3 access logs before expiration."
+  description = "Number of days to retain access logs before expiration."
   type        = number
   default     = 365
 }
 
 variable "raw_files_expiration_days" {
-  description = "Number of days after which raw files are deleted from S3."
+  description = "Number of days after which raw files are deleted."
   type        = number
   default     = 7
 }
 
 variable "upscaled_files_expiration_days" {
-  description = "Number of days after which upscaled files are deleted from S3."
+  description = "Number of days after which upscaled files are deleted."
   type        = number
   default     = 14
 }
