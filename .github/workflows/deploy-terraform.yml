@@ -144,6 +144,10 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: GitHubActions-Terraform-Dev
 
+      - name: Create Lambda builds directory
+        run: mkdir -p lambda_builds
+        working-directory: ${{ inputs.working_directory }}
+
       - name: Create backend config
         env:
           TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
@@ -245,6 +249,10 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: GitHubActions-Terraform-Dev
+
+      - name: Create Lambda builds directory
+        run: mkdir -p lambda_builds
+        working-directory: ${{ inputs.working_directory }}
 
       - name: Create backend config
         env:

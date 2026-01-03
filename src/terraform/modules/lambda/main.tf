@@ -27,7 +27,7 @@ module "presign_model_urls_lambda" {
   source_path = "${path.module}/../../../lambdas/presign_s3_urls"
 
   # Packaging configuration
-  artifacts_dir = "${path.root}/.terraform/lambda-builds/"
+  artifacts_dir = "${path.root}/lambda_builds"
   hash_extra    = "presign_s3_urls"
 
   publish = true
