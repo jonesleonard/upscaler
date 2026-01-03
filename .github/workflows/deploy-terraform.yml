@@ -49,11 +49,6 @@ permissions:
   pull-requests: write
   id-token: write # Required for OIDC authentication with AWS
 
-# Best Practice: Cancel in-progress runs on the same branch
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.environment || 'dev' }}
-  cancel-in-progress: false # Don't cancel Terraform operations to avoid state locks
-
 jobs:
   validate:
     name: Validate & Lint
@@ -282,7 +277,12 @@ jobs:
           name: terraform-outputs-dev
           path: ${{ inputs.working_directory }}/terraform-outputs.json
           retention-days: 1
-
+      
+      # Export outputs for use in other jobs/workflows
+      # Sensitive outputs are skipped
+      # Simple: ${{ steps.export-terraform-outputs.outputs.aws_region }}
+      # Array: ${{ fromJson(steps.export-terraform-outputs.outputs.some_array_output) }}
+      # Lookup: ${{ fromJSON(steps.export-terraform-outputs.outputs.vpc_intra_subnets)[0] }} to get first subnet
       - name: Export all Terraform outputs as step outputs
         id: export-terraform-outputs
         run: |

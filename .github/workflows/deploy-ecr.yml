@@ -51,11 +51,6 @@ permissions:
   id-token: write # Required for OIDC authentication with AWS
   security-events: write # Required for uploading SARIF results
 
-# Best Practice: Cancel in-progress runs on the same branch
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true # Safe to cancel container builds
-
 jobs:
   # ============================================================================
   # Build Container
