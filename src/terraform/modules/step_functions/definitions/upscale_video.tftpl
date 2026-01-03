@@ -1,5 +1,5 @@
 {
-  "Comment": "SeedVR2: split -> upscale segments (Batch) -> combine",
+  "Comment": "Video Upscaler",
   "StartAt": "Define Defaults",
   "States": {
     "Define Defaults": {
@@ -8,32 +8,9 @@
       "ResultPath": "$.inputDefaults",
       "Parameters": {
         "exec_id.$": "$$.Execution.StartTime",
-        "upscale_backend": "runpod",
-        "runpod": {
-          "poll_seconds": 60,
-          "max_polls": 120,
-          "download_models": false
-        },
         "splitter": {
           "chunk_seconds": 300,
           "use_stream_copy": true
-        },
-        "upscale": {
-          "seed": 42,
-          "debug": false,
-          "color_correction": "lab",
-          "model": "seedvr2_ema_7b_fp16.safetensors",
-          "resolution": 1080,
-          "batch_size_strategy": "explicit",
-          "batch_size": 129,
-          "chunk_size_strategy": "explicit",
-          "chunk_size": null,
-          "attention_mode": "sageattn_2",
-          "temporal_overlap": 4,
-          "vae_encode_tiled": false,
-          "vae_decode_tiled": false,
-          "cache_dit": false,
-          "cache_vae": false
         }
       }
     },
@@ -45,14 +22,14 @@
       "Parameters": {
         "args.$": "States.JsonMerge($.inputDefaults, $$.Execution.Input, false)"
       }
-    },
+    }
     "SplitVideo": {
       "Type": "Task",
       "Resource": "arn:aws:states:::batch:submitJob.sync",
       "Parameters": {
-        "JobName": "seedvr2-split",
+        "JobName": "split-video",
         "JobQueue": "${SPLIT_JOB_QUEUE_ARN}",
-        "JobDefinition": "${SPLIT_JOB_DEFINITION_ARN}",
+        "JobDefinition.$": "$.split_job_definition",
         "ContainerOverrides": {
           "Environment": [
             { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
@@ -83,326 +60,10 @@
         "exec_id.$": "$.exec_id",
         "input_s3_uri.$": "$.input_s3_uri",
         "splitter.$": "$.splitter",
-        "upscale.$": "$.upscale",
-        "upscale_backend.$": "$.upscale_backend",
-        "runpod.$": "$.runpod",
         "manifest.$": "States.StringToJson($.manifest_obj.Body)"
       },
       "ResultPath": "$",
-      "Next": "MaybePresignModels"
-    },
-    "MaybePresignModels": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Variable": "$.runpod.download_models",
-          "BooleanEquals": true,
-          "Next": "PresignModels"
-        }
-      ],
-      "Default": "SkipPresignModels"
-    },
-    "PresignModels": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "Parameters": {
-        "FunctionName": "${PRESIGN_S3_URIS_LAMBDA_ARN}",
-        "Payload": {
-          "bucket": "${BUCKET_NAME}",
-          "vae_key": "models/seedvr2/vae/ema_vae_fp16.safetensors",
-          "dit_key.$": "States.Format('models/seedvr2/dit/{}', $.upscale.model)"
-        }
-      },
-      "ResultPath": "$.model_presigns",
-      "Next": "ChooseUpscaler"
-    },
-    "SkipPresignModels": {
-      "Type": "Pass",
-      "Result": {
-        "Payload": {}
-      },
-      "ResultPath": "$.model_presigns",
-      "Next": "ChooseUpscaler"
-    },
-    "ChooseUpscaler": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Variable": "$.upscale_backend",
-          "StringEquals": "aws_batch",
-          "Next": "UpscaleSegmentsAwsBatch"
-        },
-        {
-          "Variable": "$.upscale_backend",
-          "StringEquals": "runpod",
-          "Next": "UpscaleSegmentsRunPod"
-        }
-      ],
-      "Default": "UpscaleSegmentsRunPod"
-    },
-    "UpscaleSegmentsAwsBatch": {
-      "Type": "Map",
-      "ItemsPath": "$.manifest.segments",
-      "MaxConcurrency": 10,
-      "Parameters": {
-        "exec_id.$": "$.exec_id",
-        "splitter.$": "$.splitter",
-        "upscale.$": "$.upscale",
-        "segment.$": "$$.Map.Item.Value",
-        "recommendations.$": "$.manifest.metadata.recommendations"
-      },
-      "Iterator": {
-        "StartAt": "UpscaleOne",
-        "States": {
-          "UpscaleOne": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::batch:submitJob.sync",
-            "Parameters": {
-              "JobName": "seedvr2-upscale",
-              "JobQueue": "${UPSCALE_JOB_QUEUE_ARN}",
-              "JobDefinition": "${UPSCALE_JOB_DEFINITION_ARN}",
-              "ContainerOverrides": {
-                "Environment": [
-                  { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
-                  { "Name": "INPUT_SEGMENT_S3_URI", "Value.$": "$.segment.s3_uri" },
-                  { "Name": "OUTPUT_SEGMENT_S3_URI", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/upscaled/{}', $.exec_id, $.segment.filename)" },
-                  { "Name": "MODEL", "Value.$": "$.upscale.model" },
-                  { "Name": "DEBUG", "Value.$": "States.JsonToString($.upscale.debug)" },
-                  { "Name": "SEED", "Value.$": "States.JsonToString($.upscale.seed)" },
-                  { "Name": "COLOR_CORRECTION", "Value.$": "$.upscale.color_correction" },
-                  { "Name": "RESOLUTION", "Value.$": "States.JsonToString($.upscale.resolution)" },
-                  { "Name": "BATCH_SIZE_STRATEGY", "Value.$": "$.upscale.batch_size_strategy" },
-                  { "Name": "BATCH_SIZE_EXPLICIT", "Value.$": "States.JsonToString($.upscale.batch_size)" },
-                  { "Name": "BATCH_SIZE_CONSERVATIVE", "Value.$": "States.JsonToString($.recommendations.batch_size_conservative)" },
-                  { "Name": "BATCH_SIZE_QUALITY", "Value.$": "States.JsonToString($.recommendations.batch_size_quality)" },
-                  { "Name": "CHUNK_SIZE_STRATEGY", "Value.$": "$.upscale.chunk_size_strategy" },
-                  { "Name": "CHUNK_SIZE_EXPLICIT", "Value.$": "States.JsonToString($.upscale.chunk_size)" },
-                  { "Name": "CHUNK_SIZE_RECOMMENDED", "Value.$": "States.JsonToString($.recommendations.chunk_size)" },
-                  { "Name": "CHUNK_SIZE_FALLBACK", "Value.$": "States.JsonToString($.recommendations.chunk_size_fallback)" },
-                  { "Name": "ATTENTION_MODE", "Value.$": "$.upscale.attention_mode" },
-                  { "Name": "TEMPORAL_OVERLAP", "Value.$": "States.JsonToString($.upscale.temporal_overlap)" },
-                  { "Name": "VAE_ENCODE_TILED", "Value.$": "States.JsonToString($.upscale.vae_encode_tiled)" },
-                  { "Name": "VAE_DECODE_TILED", "Value.$": "States.JsonToString($.upscale.vae_decode_tiled)" },
-                  { "Name": "CACHE_DIT", "Value.$": "States.JsonToString($.upscale.cache_dit)" },
-                  { "Name": "CACHE_VAE", "Value.$": "States.JsonToString($.upscale.cache_vae)" }
-                ]
-              }
-            },
-            "End": true
-          }
-        }
-      },
-      "ResultPath": "$.upscale_results",
-      "Next": "CombineSegments"
-    },
-    "UpscaleSegmentsRunPod": {
-      "Type": "Map",
-      "ItemsPath": "$.manifest.segments",
-      "MaxConcurrency": ${RUNPOD_MAX_CONCURRENCY},
-      "Parameters": {
-        "exec_id.$": "$.exec_id",
-        "upscale.$": "$.upscale",
-        "runpod.$": "$.runpod",
-        "segment.$": "$$.Map.Item.Value",
-        "recommendations.$": "$.manifest.metadata.recommendations",
-        "model_urls.$": "$.model_presigns.Payload"
-      },
-      "Iterator": {
-        "StartAt": "PresignSegmentIO",
-        "States": {
-          "PresignSegmentIO": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::lambda:invoke",
-            "Parameters": {
-              "FunctionName": "${PRESIGN_S3_URIS_LAMBDA_ARN}",
-              "Payload": {
-                "bucket": "${BUCKET_NAME}",
-                "segment_key.$": "States.Format('runs/{}/raw/{}', $.exec_id, $.segment.filename)",
-                "output_key.$": "States.Format('runs/{}/upscaled/{}', $.exec_id, $.segment.filename)"
-              }
-            },
-            "ResultPath": "$.io_presigns",
-            "Next": "ChooseRunPodSubmit"
-          },
-
-          "ChooseRunPodSubmit": {
-            "Type": "Choice",
-            "Choices": [
-              {
-                "Variable": "$.runpod.download_models",
-                "BooleanEquals": true,
-                "Next": "RunPodSubmitWithModels"
-              }
-            ],
-            "Default": "RunPodSubmitNoModels"
-          },
-
-          "RunPodSubmitWithModels": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::http:invoke",
-            "Parameters": {
-              "ApiEndpoint": "${RUNPOD_RUN_ENDPOINT}",
-              "Method": "POST",
-              "InvocationConfig": {
-                "ConnectionArn": "${RUNPOD_CONNECTION_ARN}"
-              },
-              "RequestBody": {
-                "input": {
-                  "input_presigned_url.$": "$.io_presigns.Payload.input_presigned_url",
-                  "output_presigned_url.$": "$.io_presigns.Payload.output_presigned_url",
-                  "vae_model_presigned_url.$": "$.model_urls.vae_model_presigned_url",
-                  "dit_model_presigned_url.$": "$.model_urls.dit_model_presigned_url",
-                  "params": {
-                    "debug.$": "$.upscale.debug",
-                    "model.$": "$.upscale.model",
-                    "resolution.$": "$.upscale.resolution",
-                    "batch_size_strategy.$": "$.upscale.batch_size_strategy",
-                    "batch_size_quality.$": "$.recommendations.batch_size_quality",
-                    "chunk_size_strategy.$": "$.upscale.chunk_size_strategy",
-                    "chunk_size_recommended.$": "$.recommendations.chunk_size",
-                    "attention_mode.$": "$.upscale.attention_mode",
-                    "temporal_overlap.$": "$.upscale.temporal_overlap",
-                    "log_level": "DEBUG"
-                  }
-                }
-              }
-            },
-            "ResultPath": "$.runpod_submit",
-            "Next": "InitPoll"
-          },
-
-          "RunPodSubmitNoModels": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::http:invoke",
-            "Parameters": {
-              "ApiEndpoint": "${RUNPOD_RUN_ENDPOINT}",
-              "Method": "POST",
-              "InvocationConfig": {
-                "ConnectionArn": "${RUNPOD_CONNECTION_ARN}"
-              },
-              "RequestBody": {
-                "input": {
-                  "input_presigned_url.$": "$.io_presigns.Payload.input_presigned_url",
-                  "output_presigned_url.$": "$.io_presigns.Payload.output_presigned_url",
-                  "params": {
-                    "debug.$": "$.upscale.debug",
-                    "model.$": "$.upscale.model",
-                    "resolution.$": "$.upscale.resolution",
-                    "batch_size_strategy.$": "$.upscale.batch_size_strategy",
-                    "batch_size_quality.$": "$.recommendations.batch_size_quality",
-                    "chunk_size_strategy.$": "$.upscale.chunk_size_strategy",
-                    "chunk_size_recommended.$": "$.recommendations.chunk_size",
-                    "attention_mode.$": "$.upscale.attention_mode",
-                    "temporal_overlap.$": "$.upscale.temporal_overlap",
-                    "log_level": "DEBUG"
-                  }
-                }
-              }
-            },
-            "ResultPath": "$.runpod_submit",
-            "Next": "InitPoll"
-          },
-
-          "InitPoll": {
-            "Type": "Pass",
-            "Parameters": {
-              "poll_count": 0,
-              "job_id.$": "$.runpod_submit.ResponseBody.id"
-            },
-            "ResultPath": "$.poll",
-            "Next": "WaitBeforePoll"
-          },
-
-          "WaitBeforePoll": {
-            "Type": "Wait",
-            "SecondsPath": "$.runpod.poll_seconds",
-            "Next": "RunPodStatus"
-          },
-
-          "RunPodStatus": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::http:invoke",
-            "Parameters": {
-              "ApiEndpoint.$": "States.Format('${RUNPOD_STATUS_ENDPOINT_PREFIX}/{}', $.poll.job_id)",
-              "Method": "GET",
-              "InvocationConfig": {
-                "ConnectionArn": "${RUNPOD_CONNECTION_ARN}"
-              }
-            },
-            "ResultPath": "$.runpod_status",
-            "Next": "CheckRunPod"
-          },
-
-          "CheckRunPod": {
-            "Type": "Choice",
-            "Choices": [
-              {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "COMPLETED",
-                "Next": "Done"
-              },
-              {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "FAILED",
-                "Next": "Fail"
-              },
-              {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "CANCELLED",
-                "Next": "Cancelled"
-              },
-              {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "TIMED_OUT",
-                "Next": "RunPodJobTimeout"
-              },
-              {
-                "Variable": "$.poll.poll_count",
-                "NumericGreaterThanEqualsPath": "$.runpod.max_polls",
-                "Next": "Timeout"
-              }
-            ],
-            "Default": "IncrementPoll"
-          },
-
-          "IncrementPoll": {
-            "Type": "Pass",
-            "Parameters": {
-              "poll_count.$": "States.MathAdd($.poll.poll_count, 1)",
-              "job_id.$": "$.poll.job_id"
-            },
-            "ResultPath": "$.poll",
-            "Next": "WaitBeforePoll"
-          },
-
-          "Done": { "Type": "Succeed" },
-          "Fail": { "Type": "Fail", "Error": "RunPodFailed", "Cause": "RunPod job returned FAILED" },
-          "Cancelled": { "Type": "Fail", "Error": "RunPodCancelled", "Cause": "RunPod job returned CANCELLED" },
-          "RunPodJobTimeout": { "Type": "Fail", "Error": "RunPodJobTimeout", "Cause": "RunPod job returned TIMED_OUT" },
-          "Timeout": { "Type": "Fail", "Error": "RunPodTimeout", "Cause": "RunPod polling exceeded max_polls" }
-        }
-      },
-      "ResultPath": "$.upscale_results",
-      "Next": "CombineSegments"
-    },
-    "CombineSegments": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::batch:submitJob.sync",
-      "Parameters": {
-        "JobName": "seedvr2-combine",
-        "JobQueue": "${COMBINE_JOB_QUEUE_ARN}",
-        "JobDefinition": "${COMBINE_JOB_DEFINITION_ARN}",
-        "ContainerOverrides": {
-          "Environment": [
-            { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
-            { "Name": "MANIFEST_S3_URI", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/manifest.json', $.exec_id)" },
-            { "Name": "UPSCALED_S3_PREFIX", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/upscaled', $.exec_id)" },
-            { "Name": "OUTPUT_FINAL_S3_URI", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/final/final.mp4', $.exec_id)" }
-          ]
-        }
-      },
-      "ResultPath": "$.combine",
-      "End": true
+      "End": "True"
     }
   }
 }
