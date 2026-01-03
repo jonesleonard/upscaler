@@ -162,7 +162,7 @@ jobs:
       - name: Load Docker image
         run: |
           ls -al /tmp
-          gunzip -c /tmp/container-image.tar.gz
+          tar -xzf /tmp/container-image.tar.gz -C /tmp
           ls -al /tmp
 
       # - name: Configure AWS Credentials (OIDC)
