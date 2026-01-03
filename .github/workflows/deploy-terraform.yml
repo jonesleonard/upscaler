@@ -28,6 +28,9 @@ on:
       ecr_splitter_repository_name:
         description: "ECR Repository Name for Splitter Repository"
         value: ${{ jobs.apply-dev.outputs.ecr_splitter_repository_name }}
+      batch_split_job_definition_name:
+        description: "AWS Batch Job Definition Name for Splitter Job"
+        value: ${{ jobs.apply-dev.outputs.batch_split_job_definition_name }}
   workflow_dispatch:
     inputs:
       environment:
@@ -235,6 +238,7 @@ jobs:
     outputs:
       aws_region: ${{ inputs.aws_region }}
       ecr_splitter_repository_name: ${{ steps.export-terraform-outputs.outputs.ecr_splitter_repository_name }}
+      batch_split_job_definition_name: ${{ steps.export-terraform-outputs.outputs.batch_split_job_definition_name }}
     environment:
       name: dev
     

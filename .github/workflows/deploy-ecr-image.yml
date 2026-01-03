@@ -21,6 +21,10 @@ on:
         description: "Path to the container source code"
         required: true
         type: string
+      job_definition_name:
+        description: "AWS Batch Job Definition Name to update"
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       environment:
@@ -41,6 +45,10 @@ on:
         type: string
       container_path:
         description: "Path to the container source code"
+        required: true
+        type: string
+      job_definition_name:
+        description: "AWS Batch Job Definition Name to update"
         required: true
         type: string
 
@@ -225,127 +233,127 @@ jobs:
   # ============================================================================
   # Update Batch Job Definition
   # ============================================================================
-#   update-batch-job:
-#     name: Update Batch Job Definition
-#     needs: push-dev
-#     runs-on: ubuntu-latest
-#     environment:
-#       name: dev
+  update-batch-job:
+    name: Update Batch Job Definition
+    needs: push-dev
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
     
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-#           aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
-#           role-session-name: GitHubActions-Batch-Update-Dev
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: GitHubActions-Batch-Update-Dev
 
-#       - name: Get current job definition
-#         id: current-job
-#         run: |
-#           JOB_DEF_NAME="${{ vars.PROJECT_NAME || 'upscaler' }}-splitter-job-dev"
+      - name: Get current job definition
+        id: current-job
+        run: |
+          JOB_DEF_NAME="${{ inputs.job_definition_name }}"
           
-#           # Get the latest active revision
-#           LATEST_DEF=$(aws batch describe-job-definitions \
-#             --job-definition-name "$JOB_DEF_NAME" \
-#             --status ACTIVE \
-#             --query 'jobDefinitions[0]' \
-#             --output json)
+          # Get the latest active revision
+          LATEST_DEF=$(aws batch describe-job-definitions \
+            --job-definition-name "$JOB_DEF_NAME" \
+            --status ACTIVE \
+            --query 'jobDefinitions[0]' \
+            --output json)
           
-#           if [ "$LATEST_DEF" = "null" ] || [ -z "$LATEST_DEF" ]; then
-#             echo "No active job definition found for: $JOB_DEF_NAME"
-#             echo "job-exists=false" >> $GITHUB_OUTPUT
-#           else
-#             echo "job-exists=true" >> $GITHUB_OUTPUT
-#             echo "$LATEST_DEF" > /tmp/current-job-def.json
-#           fi
+          if [ "$LATEST_DEF" = "null" ] || [ -z "$LATEST_DEF" ]; then
+            echo "No active job definition found for: $JOB_DEF_NAME"
+            echo "job-exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "job-exists=true" >> $GITHUB_OUTPUT
+            echo "$LATEST_DEF" > /tmp/current-job-def.json
+          fi
 
-#       - name: Register new job definition revision
-#         if: steps.current-job.outputs.job-exists == 'true'
-#         id: register-job
-#         run: |
-#           # Read current definition
-#           CURRENT_DEF=$(cat /tmp/current-job-def.json)
+      - name: Register new job definition revision
+        if: steps.current-job.outputs.job-exists == 'true'
+        id: register-job
+        run: |
+          # Read current definition
+          CURRENT_DEF=$(cat /tmp/current-job-def.json)
           
-#           # Update the image URI in the container definition
-#           NEW_IMAGE_URI="${{ needs.push-dev.outputs.ecr-image-uri }}"
+          # Update the image URI in the container definition
+          NEW_IMAGE_URI="${{ needs.push-dev.outputs.ecr-image-uri }}"
           
-#           # Extract and update container properties
-#           UPDATED_DEF=$(echo "$CURRENT_DEF" | jq --arg img "$NEW_IMAGE_URI" '
-#             .containerProperties.image = $img |
-#             del(.jobDefinitionArn, .revision, .status, .registeredAt, .registeredBy)
-#           ')
+          # Extract and update container properties
+          UPDATED_DEF=$(echo "$CURRENT_DEF" | jq --arg img "$NEW_IMAGE_URI" '
+            .containerProperties.image = $img |
+            del(.jobDefinitionArn, .revision, .status, .registeredAt, .registeredBy)
+          ')
           
-#           # Register new revision
-#           NEW_REV=$(aws batch register-job-definition \
-#             --cli-input-json "$UPDATED_DEF" \
-#             --output json)
+          # Register new revision
+          NEW_REV=$(aws batch register-job-definition \
+            --cli-input-json "$UPDATED_DEF" \
+            --output json)
           
-#           NEW_REVISION=$(echo "$NEW_REV" | jq -r '.revision')
-#           echo "new-revision=$NEW_REVISION" >> $GITHUB_OUTPUT
-#           echo "Successfully registered job definition revision: $NEW_REVISION"
+          NEW_REVISION=$(echo "$NEW_REV" | jq -r '.revision')
+          echo "new-revision=$NEW_REVISION" >> $GITHUB_OUTPUT
+          echo "Successfully registered job definition revision: $NEW_REVISION"
 
-#       - name: Create job definition if not exists
-#         if: steps.current-job.outputs.job-exists == 'false'
-#         run: |
-#           echo "⚠️ No active job definition found. You may need to run Terraform apply first."
-#           echo "Terraform will create the initial job definition with the container image."
-#           exit 1
+      - name: Create job definition if not exists
+        if: steps.current-job.outputs.job-exists == 'false'
+        run: |
+          echo "⚠️ No active job definition found. You may need to run Terraform apply first."
+          echo "Terraform will create the initial job definition with the container image."
+          exit 1
 
-#       - name: Summary
-#         run: |
-#           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
-#           echo "" >> $GITHUB_STEP_SUMMARY
-#           echo "✅ **Container Image Pushed:** ${{ needs.push-dev.outputs.ecr-image-uri }}" >> $GITHUB_STEP_SUMMARY
-#           echo "✅ **Job Definition Updated:** Revision ${{ steps.register-job.outputs.new-revision }}" >> $GITHUB_STEP_SUMMARY
-#           echo "" >> $GITHUB_STEP_SUMMARY
-#           echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-#           echo "- New Batch jobs will automatically use the updated image" >> $GITHUB_STEP_SUMMARY
-#           echo "- Monitor CloudWatch Logs for job execution" >> $GITHUB_STEP_SUMMARY
-#           echo "- Verify functionality with a test job submission" >> $GITHUB_STEP_SUMMARY
+      - name: Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Container Image Pushed:** ${{ needs.push-dev.outputs.ecr-image-uri }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Job Definition Updated:** Revision ${{ steps.register-job.outputs.new-revision }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- New Batch jobs will automatically use the updated image" >> $GITHUB_STEP_SUMMARY
+          echo "- Monitor CloudWatch Logs for job execution" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify functionality with a test job submission" >> $GITHUB_STEP_SUMMARY
 
-#   # ============================================================================
-#   # Optional: Run Integration Test
-#   # ============================================================================
-#   test-integration:
-#     name: Run Integration Test (Optional)
-#     needs: update-batch-job
-#     if: github.ref == 'refs/heads/main' && vars.RUN_INTEGRATION_TESTS == 'true'
-#     runs-on: ubuntu-latest
-#     environment:
-#       name: dev
+  # ============================================================================
+  # Optional: Run Integration Test
+  # ============================================================================
+  # test-integration:
+  #   name: Run Integration Test (Optional)
+  #   needs: update-batch-job
+  #   if: github.ref == 'refs/heads/main' && vars.RUN_INTEGRATION_TESTS == 'true'
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: dev
     
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-#           aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
-#           role-session-name: GitHubActions-Integration-Test
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+  #         aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
+  #         role-session-name: GitHubActions-Integration-Test
 
-#       - name: Upload test video to S3
-#         run: |
-#           # TODO: Upload a small test video to S3
-#           echo "Integration test placeholder - implement test video upload"
+  #     - name: Upload test video to S3
+  #       run: |
+  #         # TODO: Upload a small test video to S3
+  #         echo "Integration test placeholder - implement test video upload"
 
-#       - name: Submit test Batch job
-#         id: submit-job
-#         run: |
-#           # TODO: Submit a test job to Batch
-#           echo "Integration test placeholder - implement job submission"
+  #     - name: Submit test Batch job
+  #       id: submit-job
+  #       run: |
+  #         # TODO: Submit a test job to Batch
+  #         echo "Integration test placeholder - implement job submission"
 
-#       - name: Wait for job completion
-#         run: |
-#           # TODO: Poll job status and wait for completion
-#           echo "Integration test placeholder - implement job monitoring"
+  #     - name: Wait for job completion
+  #       run: |
+  #         # TODO: Poll job status and wait for completion
+  #         echo "Integration test placeholder - implement job monitoring"
 
-#       - name: Verify outputs
-#         run: |
-#           # TODO: Check that segments and manifest were created correctly
-#           echo "Integration test placeholder - implement output verification"
+  #     - name: Verify outputs
+  #       run: |
+  #         # TODO: Check that segments and manifest were created correctly
+  #         echo "Integration test placeholder - implement output verification"
