@@ -133,6 +133,9 @@ module "upscale_video_bucket_logging_bucket" {
   version = "5.9.1"
 
   bucket = local.logging_bucket_name
+  
+  # Allow deletion of non-empty bucket
+  force_destroy = true
 
   control_object_ownership = true
   object_ownership         = "BucketOwnerEnforced"
