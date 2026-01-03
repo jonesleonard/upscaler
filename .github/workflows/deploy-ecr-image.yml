@@ -182,7 +182,7 @@ jobs:
           docker load -i ${{ runner.temp }}/container-image.tar.gz
           docker images
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
@@ -200,17 +200,21 @@ jobs:
           ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          set -e
+          # Get the actual loaded image tag (first tag from metadata action)
+          LOADED_TAG=$(echo "${{ needs.build.outputs.image-tag }}" | head -n1)
+          
           # Tag with SHA
-          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag "$LOADED_TAG" $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           
           # Tag with 'latest'
-          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker tag "$LOADED_TAG" $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
           # Tag with short SHA
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
+          docker tag "$LOADED_TAG" $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
           
           # Output full image URI
