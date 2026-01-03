@@ -157,13 +157,15 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: container-image-${{ github.sha }}
-          path: /tmp
+          path: ${{ runner.temp }}
 
       - name: Load Docker image
         run: |
-          ls -al /tmp
-          tar -xzf /tmp/container-image.tar.gz -C /tmp
-          ls -al /tmp
+          ls -al ${{ runner.temp }}
+          tar -xzf ${{ runner.temp }}/container-image.tar.gz -C ${{ runner.temp }}
+          ls -al ${{ runner.temp }}
+          docker load -i ${{ runner.temp }}/container-image.tar.gz
+          docker images
 
       # - name: Configure AWS Credentials (OIDC)
       #   uses: aws-actions/configure-aws-credentials@v4
