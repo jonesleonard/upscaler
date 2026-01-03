@@ -13,10 +13,16 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
   org.opencontainers.image.description="Split video files into segments for parallel upscaling" \
   org.opencontainers.image.vendor="upscaler"
 
-# Install system dependencies in single layer
+# Install system dependencies and AWS CLI in single layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ffmpeg \
   ca-certificates \
+  curl \
+  unzip \
+  && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+  && unzip awscliv2.zip \
+  && ./aws/install \
+  && rm -rf awscliv2.zip aws \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean
 
