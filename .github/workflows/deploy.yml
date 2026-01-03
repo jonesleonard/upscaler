@@ -33,6 +33,7 @@ jobs:
           environment: dev
           terraform_version: "1.14.3"
           working_directory: "./src/terraform"
+        secrets: inherit
     deploy-ecr-splitter:
         name: Deploy Splitter ECR Image
         uses: ./.github/workflows/deploy-ecr.yml
