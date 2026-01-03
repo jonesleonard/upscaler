@@ -36,7 +36,7 @@ jobs:
         secrets: inherit
     deploy-ecr-splitter:
         name: Deploy Splitter ECR Image
-        uses: ./.github/workflows/deploy-ecr.yml
+        uses: ./.github/workflows/deploy-ecr-image.yml
         needs: deploy-terraform
         with:
           environment: dev
