@@ -201,13 +201,6 @@ jobs:
           echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
           echo "Pushed image: ${IMAGE_URI}"
 
-      - name: Scan image in ECR
-        run: |
-          aws ecr start-image-scan \
-            --repository-name ${{ vars.PROJECT_NAME || 'upscaler' }}-splitter-dev-ecr \
-            --image-id imageTag=${{ github.sha }} \
-            --region ${{ vars.AWS_REGION }} || true
-
   # ============================================================================
   # Update Batch Job Definition
   # ============================================================================
