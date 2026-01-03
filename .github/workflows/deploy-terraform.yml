@@ -24,6 +24,10 @@ on:
         required: false
         type: string
         default: "./src/terraform"
+    outputs:
+      ecr_splitter_repository_name:
+        description: "ECR Repository Name for Splitter Repository"
+        value: ${{ jobs.apply-dev.outputs.ecr_splitter_repository_name }}
   workflow_dispatch:
     inputs:
       environment:
@@ -218,7 +222,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       aws_region: ${{ inputs.aws_region }}
-      splitter_ecr_repository_name: ${{ steps.export-terraform-outputs.outputs.ecr_splitter_repository_name }}
+      ecr_splitter_repository_name: ${{ steps.export-terraform-outputs.outputs.ecr_splitter_repository_name }}
     environment:
       name: dev
     
