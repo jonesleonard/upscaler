@@ -146,3 +146,66 @@ module "batch" {
   enable_upscale        = var.batch_enable_upscale
   enable_upscale_runpod = var.batch_enable_upscale_runpod
 }
+
+################################################################################
+# EventBridge (RunPod Connection)
+################################################################################
+
+module "eventbridge" {
+  source       = "./modules/eventbridge"
+  environment  = var.environment
+  project_name = var.project_name
+  tags         = local.tags
+
+  # RunPod Configuration
+  runpod_api_key = var.runpod_api_key
+}
+
+################################################################################
+# Step Functions
+################################################################################
+
+module "step_functions" {
+  source       = "./modules/step_functions"
+  environment  = var.environment
+  project_name = var.project_name
+  tags         = local.tags
+
+  # S3 Bucket
+  upscale_video_bucket_name = module.s3.bucket_id
+
+  # Batch Job Configuration - Split
+  upscale_video_split_job_queue_arn      = module.batch.split_job_queue_arn
+  upscale_video_split_job_definition_arn = module.batch.split_job_definition_arn
+
+  # Batch Job Configuration - Upscale
+  upscale_video_upscale_job_queue_arn      = module.batch.upscale_job_queue_arn
+  upscale_video_upscale_job_definition_arn = module.batch.upscale_job_definition_arn
+
+  # Batch Job Configuration - Combine
+  upscale_video_combine_job_queue_arn      = module.batch.combine_job_queue_arn
+  upscale_video_combine_job_definition_arn = module.batch.combine_job_definition_arn
+
+  # Lambda Configuration
+  presign_s3_urls_lambda_function_arn = module.lambda.presign_model_urls_lambda_function_arn
+
+  # RunPod Configuration
+  runpod_base_api_endpoint = var.runpod_base_api_endpoint
+  runpod_endpoint_id       = var.runpod_endpoint_id
+  runpod_connection_arn    = module.eventbridge.runpod_connection_arn
+  runpod_max_concurrency   = var.runpod_max_concurrency
+}
+
+################################################################################
+# Lambda Functions
+################################################################################
+
+module "lambda" {
+  source       = "./modules/lambda"
+  environment  = var.environment
+  project_name = var.project_name
+  tags         = local.tags
+
+  # S3 Bucket
+  upscale_video_bucket_arn = module.s3.bucket_arn
+}

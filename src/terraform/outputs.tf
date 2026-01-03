@@ -252,3 +252,46 @@ output "batch_upscale_runpod_job_queue_name" {
   description = "The name of the upscale_runpod job queue."
   value       = module.batch.upscale_runpod_job_queue_name
 }
+
+################################################################################
+# EventBridge Outputs
+################################################################################
+
+output "eventbridge_runpod_connection_arn" {
+  description = "The ARN of the RunPod EventBridge connection."
+  value       = module.eventbridge.runpod_connection_arn
+  sensitive   = true
+}
+
+output "eventbridge_runpod_connection_name" {
+  description = "The name of the RunPod EventBridge connection."
+  value       = module.eventbridge.runpod_connection_name
+}
+
+################################################################################
+# Step Functions Outputs
+################################################################################
+
+output "step_functions_upscale_video_state_machine_arn" {
+  description = "The ARN of the Upscale Video Step Function state machine."
+  value       = module.step_functions.upscale_video_state_machine_arn
+}
+
+output "step_functions_upscale_video_state_machine_name" {
+  description = "The name of the Upscale Video Step Function state machine."
+  value       = module.step_functions.upscale_video_state_machine_name
+}
+
+################################################################################
+# Lambda Outputs
+################################################################################
+
+output "lambda_presign_urls_function_arn" {
+  description = "The ARN of the Presign URLs Lambda function."
+  value       = module.lambda.presign_model_urls_lambda_function_arn
+}
+
+output "lambda_presign_urls_function_name" {
+  description = "The name of the Presign URLs Lambda function."
+  value       = module.lambda.presign_model_urls_lambda_function_name
+}

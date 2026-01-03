@@ -20,19 +20,17 @@ variable "tags" {
 }
 
 ################################################################################
-# CORS Configuration
+# Upscale Video S3 Bucket Configuration
 ################################################################################
 
+# CORS Configuration
 variable "cors_allowed_origins" {
   description = "List of allowed origins for CORS configuration. Use [\"*\"] for development or specific domains for production."
   type        = list(string)
   default     = ["*"]
 }
 
-################################################################################
 # Lifecycle Configuration
-################################################################################
-
 variable "abort_multipart_upload_days" {
   description = "Number of days after which incomplete multipart uploads are aborted."
   type        = number

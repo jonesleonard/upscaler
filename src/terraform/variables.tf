@@ -212,3 +212,32 @@ variable "batch_log_retention_days" {
   type        = number
   default     = 7
 }
+
+################################################################################
+# RunPod Configuration
+################################################################################
+
+variable "runpod_api_key" {
+  description = "The API Key used to authenticate with RunPod."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "runpod_base_api_endpoint" {
+  description = "The base API endpoint for RunPod (e.g., https://api.runpod.ai/v2)."
+  type        = string
+  default     = "https://api.runpod.ai/v2"
+}
+
+variable "runpod_endpoint_id" {
+  description = "The ID of the RunPod serverless endpoint."
+  type        = string
+  default     = ""
+}
+
+variable "runpod_max_concurrency" {
+  description = "The maximum concurrency for parallel RunPod upscale tasks."
+  type        = number
+  default     = 10
+}

@@ -6,10 +6,10 @@ locals {
 }
 
 ################################################################################
-# S3 Main Bucket
+# S3 Upscale Video Bucket
 ################################################################################
 
-module "s3_bucket" {
+module "upscale_video_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.9.1"
 
@@ -112,7 +112,7 @@ module "s3_bucket" {
   ]
 
   logging = {
-    target_bucket = module.s3_logging_bucket.s3_bucket_id
+    target_bucket = module.upscale_video_bucket_logging_bucket.s3_bucket_id
     target_prefix = "log/"
     target_object_key_format = {
       partitioned_prefix = {
@@ -125,10 +125,10 @@ module "s3_bucket" {
 }
 
 ################################################################################
-# S3 Logging Bucket
+# S3 Upscale Video Logging Bucket
 ################################################################################
 
-module "s3_logging_bucket" {
+module "upscale_video_bucket_logging_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.9.1"
 
