@@ -64,6 +64,13 @@ jobs:
       version: ${{ steps.meta.outputs.version }}
     
     steps:
+      - name: Echo Inputs
+        run: |
+          echo "Environment: ${{ inputs.environment }}"
+          echo "ECR Repository Name: ${{ inputs.ecr_repository_name }}"
+          echo "Container Name: ${{ inputs.container_name }}"
+          echo "Container Path: ${{ inputs.container_path }}"
+
       - name: Checkout code
         uses: actions/checkout@v6
         with:
@@ -142,31 +149,31 @@ jobs:
   # ============================================================================
   # Push to ECR (Dev Environment)
   # ============================================================================
-  push-dev:
-    name: Push to ECR (Dev)
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment:
-      name: dev
+  # push-dev:
+  #   name: Push to ECR (Dev)
+  #   needs: build
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: dev
     
-    outputs:
-      ecr-image-uri: ${{ steps.push.outputs.image-uri }}
+  #   outputs:
+  #     ecr-image-uri: ${{ steps.push.outputs.image-uri }}
     
-    steps:
-      - name: Download image artifact
-        uses: actions/download-artifact@v7
-        with:
-          name: container-image-${{ github.sha }}
-          path: ${{ runner.temp }}
+  #   steps:
+  #     - name: Download image artifact
+  #       uses: actions/download-artifact@v7
+  #       with:
+  #         name: container-image-${{ github.sha }}
+  #         path: ${{ runner.temp }}
 
-      - name: Load Docker image
-        run: |
-          ls -al ${{ runner.temp }}
-          tar -xzf ${{ runner.temp }}/container-image.tar.gz -C ${{ runner.temp }}
-          ls -al ${{ runner.temp }}
-          docker load -i ${{ runner.temp }}/container-image.tar.gz
-          docker images
+  #     - name: Load Docker image
+  #       run: |
+  #         ls -al ${{ runner.temp }}
+  #         tar -xzf ${{ runner.temp }}/container-image.tar.gz -C ${{ runner.temp }}
+  #         ls -al ${{ runner.temp }}
+  #         docker load -i ${{ runner.temp }}/container-image.tar.gz
+  #         docker images
 
       # - name: Configure AWS Credentials (OIDC)
       #   uses: aws-actions/configure-aws-credentials@v4

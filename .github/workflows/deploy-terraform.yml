@@ -292,7 +292,7 @@ jobs:
               continue
             fi
             value=$(jq -c --arg k "$key" '.[$k].value' terraform-outputs.json)
-            safe_key=$(echo "$key" | tr -c 'A-Za-z0-9_' '_')
+            safe_key=$(echo "$key" | tr -c 'A-Za-z0-9_' '_' | sed 's/_*$//')
             echo "$safe_key=$value" >> $GITHUB_OUTPUT
           done
           cat "$GITHUB_OUTPUT"
