@@ -162,43 +162,44 @@ jobs:
       - name: Load Docker image
         run: |
           ls -al /tmp
-          gunzip -c /tmp/container-image.tar.gz | docker load
+          gunzip -c /tmp/container-image.tar.gz
+          ls -al /tmp
 
-      - name: Configure AWS Credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          role-session-name: GitHubActions-Container-Deploy-Dev
+      # - name: Configure AWS Credentials (OIDC)
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: ${{ vars.AWS_REGION }}
+      #     role-session-name: GitHubActions-Container-Deploy-Dev
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      # - name: Login to Amazon ECR
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Tag and push image to ECR
-        id: push
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          # Tag with SHA
-          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      # - name: Tag and push image to ECR
+      #   id: push
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
+      #     IMAGE_TAG: ${{ github.sha }}
+      #   run: |
+      #     # Tag with SHA
+      #     docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           
-          # Tag with 'latest'
-          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      #     # Tag with 'latest'
+      #     docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-          # Tag with short SHA
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
+      #     # Tag with short SHA
+      #     SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+      #     docker tag ${{ inputs.container_name }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHORT_SHA
           
-          # Output full image URI
-          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-          echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-          echo "Pushed image: ${IMAGE_URI}"
+      #     # Output full image URI
+      #     IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+      #     echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+      #     echo "Pushed image: ${IMAGE_URI}"
 
   # ============================================================================
   # Update Batch Job Definition
