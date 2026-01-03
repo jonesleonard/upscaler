@@ -251,60 +251,43 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: GitHubActions-Batch-Update-Dev
 
-      - name: Get current job definition
-        id: current-job
+      - name: Download and modify the job definition
+        shell: bash
         run: |
-          JOB_DEF_NAME="${{ inputs.job_definition_name }}"
-          
-          # Get the latest active revision
-          LATEST_DEF=$(aws batch describe-job-definitions \
-            --job-definition-name "$JOB_DEF_NAME" \
-            --status ACTIVE \
-            --query 'jobDefinitions[0]' \
-            --output json)
-          
-          if [ "$LATEST_DEF" = "null" ] || [ -z "$LATEST_DEF" ]; then
-            echo "No active job definition found for: $JOB_DEF_NAME"
-            echo "job-exists=false" >> $GITHUB_OUTPUT
-          else
-            echo "job-exists=true" >> $GITHUB_OUTPUT
-            echo "$LATEST_DEF" > /tmp/current-job-def.json
-          fi
+          set -e
 
-      - name: Register new job definition revision
-        if: steps.current-job.outputs.job-exists == 'true'
+          # Download the existing job definition
+          aws batch describe-job-definitions --job-definition-name ${{ inputs.job_definition_name }} --status ACTIVE | \
+            jq '.jobDefinitions | unique_by(.jobDefinitionName)[] | del(
+              .jobDefinitionName,
+              .jobDefinitionArn,
+              .revision,
+              .status,
+              .containerOrchestrationType) |
+            .containerProperties.image |= gsub(".amazonaws.com/MY_IMAGE_NAME.*"; ".amazonaws.com/MY_IMAGE_NAME:${{ github.sha }}"
+            )' > job_definition.json
+
+      - name: Register the new job definition
         id: register-job
+        shell: bash
         run: |
-          # Read current definition
-          CURRENT_DEF=$(cat /tmp/current-job-def.json)
-          
-          # Update the image URI in the container definition
-          NEW_IMAGE_URI="${{ needs.push-dev.outputs.ecr-image-uri }}"
-          
-          # Extract and update container properties
-          UPDATED_DEF=$(echo "$CURRENT_DEF" | jq --arg img "$NEW_IMAGE_URI" '
-            .containerProperties.image = $img |
-            del(.jobDefinitionArn, .revision, .status, .registeredAt, .registeredBy)
-          ')
-          
-          # Register new revision
-          NEW_REV=$(aws batch register-job-definition \
-            --cli-input-json "$UPDATED_DEF" \
-            --output json)
-          
-          NEW_REVISION=$(echo "$NEW_REV" | jq -r '.revision')
-          echo "new-revision=$NEW_REVISION" >> $GITHUB_OUTPUT
-          echo "Successfully registered job definition revision: $NEW_REVISION"
+          set -e
 
-      - name: Create job definition if not exists
-        if: steps.current-job.outputs.job-exists == 'false'
-        run: |
-          echo "⚠️ No active job definition found. You may need to run Terraform apply first."
-          echo "Terraform will create the initial job definition with the container image."
-          exit 1
+          # Register the new job definition with updated image
+          aws batch register-job-definition \
+            --job-definition-name ${{ inputs.job_definition_name }} \
+            --type container \
+            --cli-input-json file://job_definition.json
+
+          # Get the new revision number
+          NEW_REVISION=$(aws batch describe-job-definitions --job-definition-name ${{ inputs.job_definition_name }} --status ACTIVE | \
+            jq -r '.jobDefinitions | unique_by(.revision) | last(.[]).revision')
+          echo "new-revision=${NEW_REVISION}" >> $GITHUB_OUTPUT
+          echo "Registered new job definition revision: ${NEW_REVISION}"
 
       - name: Summary
         run: |
+          set -e
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Container Image Pushed:** ${{ needs.push-dev.outputs.ecr-image-uri }}" >> $GITHUB_STEP_SUMMARY
