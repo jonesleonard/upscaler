@@ -304,7 +304,15 @@ jobs:
             if [ "$is_sensitive" = "true" ]; then
               continue
             fi
-            value=$(jq -c --arg k "$key" '.[$k].value' terraform-outputs.json)
+            
+            # Check value type - use raw (-r) for simple types, compact (-c) for arrays/objects
+            value_type=$(jq -r --arg k "$key" '.[$k].value | type' terraform-outputs.json)
+            if [ "$value_type" = "array" ] || [ "$value_type" = "object" ]; then
+              value=$(jq -c --arg k "$key" '.[$k].value' terraform-outputs.json)
+            else
+              value=$(jq -r --arg k "$key" '.[$k].value' terraform-outputs.json)
+            fi
+            
             safe_key=$(echo "$key" | tr -c 'A-Za-z0-9_' '_' | sed 's/_*$//')
             echo "$safe_key=$value" >> $GITHUB_OUTPUT
           done
