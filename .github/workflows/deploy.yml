@@ -34,12 +34,12 @@ jobs:
           terraform_version: "1.14.3"
           working_directory: "./src/terraform"
         secrets: inherit
-    # deploy-ecr-splitter:
-    #     name: Deploy Splitter ECR Image
-    #     uses: ./.github/workflows/deploy-ecr-image.yml
-    #     needs: deploy-terraform
-    #     with:
-    #       environment: dev
-    #       ecr_repository_name: ${{ needs.deploy-terraform.outputs.splitter_ecr_repository_name }}
-    #       container_name: ${{ needs.deploy-terraform.outputs.splitter_ecr_repository_name }}
-    #       container_path: "./src/containers/splitter"
+    deploy-ecr-splitter:
+        name: Deploy Splitter ECR Image
+        uses: ./.github/workflows/deploy-ecr-image.yml
+        needs: deploy-terraform
+        with:
+          environment: dev
+          ecr_repository_name: ${{ needs.deploy-terraform.outputs.splitter_ecr_repository_name }}
+          container_name: ${{ needs.deploy-terraform.outputs.splitter_ecr_repository_name }}
+          container_path: "./src/containers/splitter"
