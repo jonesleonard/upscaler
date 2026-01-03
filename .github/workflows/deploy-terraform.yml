@@ -295,5 +295,6 @@ jobs:
             safe_key=$(echo "$key" | tr -c 'A-Za-z0-9_' '_')
             echo "$safe_key=$value" >> $GITHUB_OUTPUT
           done
+          echo $GITHUB_OUTPUT
 
   
