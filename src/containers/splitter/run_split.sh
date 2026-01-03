@@ -306,18 +306,34 @@ upload_manifest() {
 analyze_shot_guidance() {
     log_info "Analyzing video for shot guidance..."
 
+    # Verify shot_guidance.py exists
+    if [[ ! -f "/app/shot_guidance.py" ]]; then
+        log_warn "Shot guidance script not found at /app/shot_guidance.py"
+        echo ""
+        return
+    fi
+
     local shot_guidance_json=""
     local output
+    local exit_code
 
-    if output=$(python3 /app/shot_guidance.py "$INPUT_FILE" \
+    set +e
+    output=$(python3 /app/shot_guidance.py "$INPUT_FILE" \
         --scene-threshold "${SCENE_THRESHOLD:-0.30}" \
-        --json 2>&1); then
+        --json 2>&1)
+    exit_code=$?
+    set -e
+
+    if [[ $exit_code -eq 0 ]]; then
         shot_guidance_json="$output"
-        log_info "Shot guidance analysis completed"
+        log_info "Shot guidance analysis completed successfully"
     else
         # Shot guidance failure is non-fatal but should be explicitly logged
-        log_warn "Shot guidance analysis failed (non-fatal): $output"
-        log_warn "Manifest will not include shot guidance metadata"
+        log_warn "Shot guidance analysis failed (exit code: $exit_code)"
+        log_warn "Error output: $output"
+        log_warn "Input file: $INPUT_FILE"
+        log_warn "Scene threshold: ${SCENE_THRESHOLD:-0.30}"
+        log_warn "Manifest will be created without shot guidance metadata"
     fi
 
     echo "$shot_guidance_json"
@@ -332,10 +348,13 @@ create_manifest() {
 
     log_info "Creating manifest file..."
 
+    # Use null if shot_guidance_json is empty
+    local shot_guidance_value="${shot_guidance_json:-null}"
+
     if ! env OUTPUT_DIR="$OUTPUT_DIR" \
              OUTPUT_S3_PREFIX="$OUTPUT_S3_PREFIX" \
              CHUNK_SECONDS="${CHUNK_SECONDS:-300}" \
-             SHOT_GUIDANCE_JSON="$shot_guidance_json" \
+             SHOT_GUIDANCE_JSON="$shot_guidance_value" \
              python3 /app/create_manifest.py; then
         log_error "Failed to create manifest"
         exit 1
