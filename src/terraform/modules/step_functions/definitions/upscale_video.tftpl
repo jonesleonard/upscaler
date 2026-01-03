@@ -22,7 +22,7 @@
       "Parameters": {
         "args.$": "States.JsonMerge($.inputDefaults, $$.Execution.Input, false)"
       }
-    }
+    },
     "SplitVideo": {
       "Type": "Task",
       "Resource": "arn:aws:states:::batch:submitJob.sync",
