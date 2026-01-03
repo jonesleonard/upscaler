@@ -26,6 +26,10 @@ module "presign_model_urls_lambda" {
 
   source_path = "${path.module}/../../../lambdas/presign_s3_urls"
 
+  # Packaging configuration
+  artifacts_dir = "${path.root}/builds/lambda/"
+  hash_extra    = "presign_s3_urls"
+
   publish = true
 
   attach_tracing_policy              = true
