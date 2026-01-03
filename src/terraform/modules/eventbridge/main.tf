@@ -17,7 +17,7 @@ module "runpod_connection" {
   create_api_destinations = false
 
   connections = {
-    runpod = {
+    "${var.project_name}_${var.environment}_upscaler_runpod" = {
       authorization_type = "API_KEY"
       auth_parameters = {
         api_key = {
