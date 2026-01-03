@@ -24,7 +24,7 @@ module "presign_model_urls_lambda" {
   handler       = "index.lambda_handler"
   runtime       = "python3.12"
 
-  source_path = "${path.module}/../../lambdas/presign_s3_urls"
+  source_path = "${path.module}/../../../lambdas/presign_s3_urls"
 
   publish = true
 
