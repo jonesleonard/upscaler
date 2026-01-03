@@ -118,7 +118,10 @@ jobs:
       - name: Save image for push job
         if: github.ref == 'refs/heads/main'
         run: |
-          docker save ${{ inputs.container_name }}:${{ github.sha }} | gzip > container-image.tar.gz
+          set -e
+          # Use the first tag from metadata action (main-sha format)
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker save "$IMAGE_TAG" | gzip > container-image.tar.gz
           mv container-image.tar.gz ${{ runner.temp }}/container-image.tar.gz
 
       - name: Upload image artifact
