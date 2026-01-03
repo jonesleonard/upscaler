@@ -126,7 +126,8 @@ jobs:
       - name: Save image for push job
         if: github.ref == 'refs/heads/main'
         run: |
-          set -e
+          set -euxo pipefail
+
           # Use the first tag from metadata action (main-sha format)
           IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker save "$IMAGE_TAG" | gzip > container-image.tar.gz
@@ -208,7 +209,8 @@ jobs:
           ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          set -e
+          set -euxo pipefail
+
           # Get the actual loaded image tag (first tag from metadata action)
           LOADED_TAG=$(echo "${{ needs.build.outputs.image-tag }}" | head -n1)
           
@@ -254,24 +256,26 @@ jobs:
       - name: Download and modify the job definition
         shell: bash
         run: |
-          set -e
+          set -euxo pipefail
 
           # Download the existing job definition
-          aws batch describe-job-definitions --job-definition-name ${{ inputs.job_definition_name }} --status ACTIVE | \
-            jq '.jobDefinitions | unique_by(.jobDefinitionName)[] | del(
-              .jobDefinitionName,
-              .jobDefinitionArn,
-              .revision,
-              .status,
-              .containerOrchestrationType) |
-            .containerProperties.image |= gsub(".amazonaws.com/MY_IMAGE_NAME.*"; ".amazonaws.com/MY_IMAGE_NAME:${{ github.sha }}"
-            )' > job_definition.json
+          aws batch describe-job-definitions \
+            --job-definition-name ${{ inputs.job_definition_name }} \
+            --status ACTIVE | \
+            jq --arg NEW_IMAGE "${{ needs.push-dev.outputs.ecr-image-uri }}" \
+              '.jobDefinitions[0] | 
+                del(.jobDefinitionArn, .revision, .status, .containerOrchestrationType) | 
+                .containerProperties.image = $NEW_IMAGE' > job_definition.json
+          
+          # debgug output
+          echo "Modified Job Definition:"
+          cat job_definition.json
 
       - name: Register the new job definition
         id: register-job
         shell: bash
         run: |
-          set -e
+          set -euxo pipefail
 
           # Register the new job definition with updated image
           aws batch register-job-definition \
@@ -287,7 +291,7 @@ jobs:
 
       - name: Summary
         run: |
-          set -e
+          set -euxo pipefail
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Container Image Pushed:** ${{ needs.push-dev.outputs.ecr-image-uri }}" >> $GITHUB_STEP_SUMMARY
