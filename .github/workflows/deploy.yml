@@ -45,11 +45,3 @@ jobs:
           container_path: "./src/containers/splitter"
           job_definition_name: ${{ needs.deploy-terraform.outputs.batch_split_job_definition_name }}
         secrets: inherit
-    deploy-terraform-post-ecr:
-        name: Deploy Terraform
-        uses: ./.github/workflows/deploy-terraform.yml
-        with:
-          environment: dev
-          terraform_version: "1.14.3"
-          working_directory: "./src/terraform"
-        secrets: inherit
