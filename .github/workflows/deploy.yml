@@ -43,3 +43,4 @@ jobs:
           ecr_repository_name: ${{ needs.deploy-terraform.outputs.ecr_splitter_repository_name }}
           container_name: ${{ needs.deploy-terraform.outputs.ecr_splitter_repository_name }}
           container_path: "./src/containers/splitter"
+        secrets: inherit
