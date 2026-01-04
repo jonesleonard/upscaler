@@ -140,8 +140,8 @@ jobs:
       template_id: ${{ needs.create-update-runpod-template.outputs.template_id }}
       data_center_id: "US-KS-2"
       gpu_ids: "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-80GB"
-      workers_min: 1
-      workers_max: 1
+      workers_min: 0
+      workers_max: 2
       idle_timeout: 5
       execution_timeout_ms: 3600000
       scaler_type: "QUEUE_DELAY"
