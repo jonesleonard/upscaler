@@ -67,7 +67,7 @@
       "ResultPath": "$",
       "Next": "UpscaleSegmentsRunPod"
     },
-      "UpscaleSegmentsRunPod": {
+    "UpscaleSegmentsRunPod": {
       "Type": "Map",
       "ItemsPath": "$.manifest.segments",
       "MaxConcurrency": ${RUNPOD_MAX_CONCURRENCY},
@@ -253,6 +253,26 @@
       },
       "ResultPath": "$.upscale_results",
       "End": true
+    },
+    "CombineSegments": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::batch:submitJob.sync",
+      "Parameters": {
+        "JobName": "combine-video",
+        "JobQueue": "${COMBINE_JOB_QUEUE_ARN}",
+        "JobDefinition": "$.combine_job_definition",
+        "ContainerOverrides": {
+          "Environment": [
+            { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
+            { "Name": "MANIFEST_S3_URI", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/manifest.json', $.exec_id)" },
+            { "Name": "UPSCALED_S3_PREFIX", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/upscaled', $.exec_id)" },
+            { "Name": "OUTPUT_FINAL_S3_URI", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/final/final.mp4', $.exec_id)" }
+          ]
+        }
+      },
+      "ResultPath": "$.combine",
+      "End": true
     }
+  }
   }
 }
