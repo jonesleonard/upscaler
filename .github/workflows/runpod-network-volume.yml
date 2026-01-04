@@ -52,10 +52,10 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
-          cache-dependency-path: "src/runpod_mgmt/requirements.txt"
+          cache-dependency-path: "src/runpod/requirements.txt"
 
       - name: Install dependencies
-        run: pip install -r src/runpod_mgmt/requirements.txt
+        run: pip install -r src/runpod/requirements.txt
 
       - name: Create or update RunPod network volume
         id: run
@@ -71,7 +71,7 @@ jobs:
             --size "${{ inputs.network_volume_size }}"
           )
 
-          python -m runpod_mgmt.network_volume.create_network_volume "${ARGS[@]}"
+          python -m runpod.network_volume.create_network_volume "${ARGS[@]}"
 
       - name: Network volume creation result
         if: success()

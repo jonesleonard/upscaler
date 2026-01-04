@@ -93,10 +93,10 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
-          cache-dependency-path: "src/runpod_mgmt/requirements.txt"
+          cache-dependency-path: "src/runpod/requirements.txt"
 
       - name: Install dependencies
-        run: pip install -r src/runpod_mgmt/requirements.txt
+        run: pip install -r src/runpod/requirements.txt
 
       - name: Create pod
         id: run
@@ -147,7 +147,7 @@ jobs:
             ARGS+=(--no-start-ssh)
           fi
 
-          python -m runpod_mgmt.pod.create_pod "${ARGS[@]}"
+          python -m runpod.pod.create_pod "${ARGS[@]}"
 
       - name: Pod creation result
         if: success()

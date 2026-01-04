@@ -71,10 +71,10 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
           cache: 'pip'
-          cache-dependency-path: 'src/runpod_mgmt/requirements.txt'
+          cache-dependency-path: 'src/runpod/requirements.txt'
       
       - name: Install dependencies
-        run: pip install -r src/runpod_mgmt/requirements.txt
+        run: pip install -r src/runpod/requirements.txt
       
       - name: Create or update RunPod template
         id: run
@@ -119,7 +119,7 @@ jobs:
           
           export PYTHONPATH="${GITHUB_WORKSPACE}/src"
           
-          python -m runpod_mgmt.template.create_template "${ARGS[@]}"          
+          python -m runpod.template.create_template "${ARGS[@]}"          
           echo "GITHUB OUTPUT: ${GITHUB_OUTPUT}"
       
       - name: Template creation result
