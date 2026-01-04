@@ -260,7 +260,7 @@
       "Parameters": {
         "JobName": "combine-video",
         "JobQueue": "${COMBINE_JOB_QUEUE_ARN}",
-        "JobDefinition": "$.combine_job_definition",
+        "JobDefinition.$": "$.combine_job_definition",
         "ContainerOverrides": {
           "Environment": [
             { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
