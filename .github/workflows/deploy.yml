@@ -52,6 +52,20 @@ jobs:
           job_definition_name: ${{ needs.deploy-terraform.outputs.batch_split_job_definition_name }}
         secrets: inherit
   # ============================================================================
+  # Deploy ECR Combiner Image
+  # ============================================================================
+    deploy-ecr-combiner:
+        name: Deploy Combiner ECR Image
+        uses: ./.github/workflows/deploy-ecr-image.yml
+        needs: deploy-terraform
+        with:
+          environment: dev
+          ecr_repository_name: ${{ needs.deploy-terraform.outputs.ecr_combiner_repository_name }}
+          container_name: ${{ needs.deploy-terraform.outputs.ecr_combiner_repository_name }}
+          container_path: "./src/containers/combiner"
+          job_definition_name: ${{ needs.deploy-terraform.outputs.batch_combine_job_definition_name }}
+        secrets: inherit
+  # ============================================================================
   # Deploy RunPod Upscaler
   # ============================================================================
     deploy-runpod-upscaler:

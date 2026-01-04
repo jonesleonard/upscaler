@@ -190,6 +190,11 @@ output "batch_split_job_queue_arn" {
   value       = module.batch.split_job_queue_arn
 }
 
+output "batch_split_job_queue_name" {
+  description = "The name of the split job queue."
+  value       = module.batch.split_job_queue_name
+}
+
 # Upscale Job Outputs
 
 output "batch_upscale_job_definition_arn" {
@@ -254,11 +259,6 @@ output "batch_combine_job_queue_arn" {
 output "batch_combine_job_queue_name" {
   description = "The name of the combine job queue."
   value       = module.batch.combine_job_queue_name
-}
-
-output "batch_split_job_queue_name" {
-  description = "The name of the split job queue."
-  value       = module.batch.split_job_queue_name
 }
 
 ################################################################################
