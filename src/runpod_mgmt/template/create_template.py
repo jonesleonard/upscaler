@@ -11,7 +11,7 @@ import argparse
 import logging
 import traceback
 from typing import Optional
-import runpod_mgmt
+import runpod
 from .find_template_by_id import template_exists
 from .update_template_by_id import update_template
 from .find_template_by_name import find_template_by_name
@@ -71,7 +71,7 @@ def create_template(
     
     try:
         # Initialize RunPod with API key
-        runpod_mgmt.api_key = api_key
+        runpod.api_key = api_key
         
         # Check if template_id is provided
         if template_id:
@@ -107,7 +107,7 @@ def create_template(
         else:
             # Create new template
             logger.info("Creating new template")
-            response = runpod_mgmt.create_template(**template_config)
+            response = runpod.create_template(**template_config)
         
         logger.info("Template operation successful!")
         logger.info(f"Response: {response}")
