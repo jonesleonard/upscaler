@@ -46,13 +46,14 @@ module "presign_model_urls_lambda" {
 
   role_name = "${local.presign_model_urls_lambda_name}-role"
   role_path = "/lambda/${local.presign_model_urls_lambda_name}/"
+
+  attach_policy_statements = true
   policy_statements = [
     {
       effect  = "Allow",
       actions = ["s3:GetObject"],
       resources = [
         "${var.upscale_video_bucket_arn}/input/*",
-        "${var.upscale_video_bucket_arn}/raw/*",
         "${var.upscale_video_bucket_arn}/runs/*",
         "${var.upscale_video_bucket_arn}/models/*"
       ],
