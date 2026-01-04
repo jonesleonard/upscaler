@@ -94,7 +94,7 @@ jobs:
           endpoint_workers_min: 0
           endpoint_workers_max: 2
           endpoint_idle_timeout: 5
-          endpoint_execution_timeout_ms: 7200000
+          endpoint_execution_timeout_ms: 18000000
           endpoint_scaler_type: "QUEUE_DELAY"
           endpoint_scaler_value: 4
         secrets: inherit
