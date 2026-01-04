@@ -159,6 +159,7 @@ jobs:
       full_image_name: ${{ needs.build-and-push-seedvr2-image.outputs.full_image_name }}
       template_name: ${{ inputs.template_name }}
       container_disk: ${{ inputs.template_container_disk }}
+      volume_in_gb: ${{ inputs.template_volume_in_gb }}
     secrets:
       RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
   
