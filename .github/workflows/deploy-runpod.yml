@@ -32,12 +32,14 @@ permissions:
   contents: read
 
 jobs:
-  build-and-push:
+  build-and-push-seedvr2-image:
     name: Build and Push Docker Image
     uses: ./.github/workflows/docker-build-push.yml
     with:
       dockerhub_username: ${{ inputs.docker_username }}
       image_name: ${{ inputs.image_name }}
+      build_context: './src/containers/upscaler_runpod'
+      dockerfile: './src/containers/upscaler_runpod/Dockerfile'
       tag: ${{ inputs.tag || 'latest' }}
       build_args: |
         SEEDVR2_REPO=${{ inputs.seedvr2_repo  }}

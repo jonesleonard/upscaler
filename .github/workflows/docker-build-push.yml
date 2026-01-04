@@ -11,6 +11,14 @@ on:
         description: 'Docker image name'
         required: true
         type: string
+      build_context:
+        description: 'Docker build context'
+        required: true
+        type: string
+      dockerfile:
+        description: 'Dockerfile path'
+        required: true
+        type: string
       tag:
         description: 'Docker image tag (default: latest)'
         required: false
@@ -21,16 +29,6 @@ on:
         required: false
         type: string
         default: ''
-      build_context:
-        description: 'Docker build context'
-        required: false
-        type: string
-        default: './src/upscale'
-      dockerfile:
-        description: 'Dockerfile path'
-        required: false
-        type: string
-        default: './src/upscale/Dockerfile'
     outputs:
       image_tag:
         description: 'The Docker image tag that was built'
