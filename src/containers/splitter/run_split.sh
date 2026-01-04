@@ -25,7 +25,7 @@ UPLOAD_COMPLETED="false"
 # ============================================================================
 
 log_info() {
-    echo "[INFO] $(date -u +"%Y-%m-%dT%H:%M:%SZ") $*"
+    echo "[INFO] $(date -u +"%Y-%m-%dT%H:%M:%SZ") $*" >&2
 }
 
 log_error() {
@@ -40,7 +40,7 @@ log_metric() {
     # Structured log for metrics - easier to parse in CloudWatch Insights
     local metric_name=$1
     local metric_value=$2
-    echo "[METRIC] $(date -u +"%Y-%m-%dT%H:%M:%SZ") ${metric_name}=${metric_value}"
+    echo "[METRIC] $(date -u +"%Y-%m-%dT%H:%M:%SZ") ${metric_name}=${metric_value}" >&2
 }
 
 # ============================================================================
