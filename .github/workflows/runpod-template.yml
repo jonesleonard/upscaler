@@ -1,0 +1,130 @@
+name: Create or Update RunPod Template
+
+on:
+  workflow_call:
+    inputs:
+      full_image_name:
+        description: 'Full Docker image name (username/image:tag)'
+        required: true
+        type: string
+      runpod_rest_api_base_url:
+        description: 'RunPod REST API base URL'
+        required: true
+        type: string
+      container_disk:
+        description: 'The amount of disk space in GB to allocate for the container.'
+        required: false
+        type: number
+        default: 50
+      volume:
+        description: 'The amount of disk space, in gigabytes (GB), to allocate on the Pods deployed with this template.'
+        required: false
+        type: number
+        default: 20
+      template_name:
+        description: 'RunPod template name'
+        required: false
+        type: string
+        default: 'seedvr2_upscaler'
+      env_vars:
+        description: 'Newline-separated KEY=VALUE environment variables'
+        required: false
+        type: string
+        default: ''
+      is_serverless:
+        description: 'Whether the template should be serverless'
+        required: false
+        type: boolean
+        default: true
+      python_version:
+        description: 'Python version to use in the RunPod template'
+        required: false
+        type: string
+        default: '3.13'
+    outputs:
+      template_id:
+        description: 'The ID of the created/updated template'
+        value: ${{ jobs.create-update-template.outputs.template_id }}
+    secrets:
+      RUNPOD_API_KEY:
+        required: true
+env:
+  FULL_IMAGE_NAME: ${{ inputs.full_image_name }}
+  TEMPLATE_NAME: ${{ inputs.template_name }}
+  RUNPOD_REST_API_BASE_URL: ${{ inputs.runpod_rest_api_base_url }}
+
+permissions:
+  contents: read
+
+jobs:
+  create-update-template:
+    runs-on: ubuntu-latest
+    outputs:
+      template_id: ${{ steps.run.outputs.template_id }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+          cache: 'pip'
+          cache-dependency-path: 'src/runpod_mgmt/requirements.txt'
+      
+      - name: Install dependencies
+        run: pip install -r src/runpod_mgmt/requirements.txt
+      
+      - name: Create or update RunPod template
+        id: run
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+        run: |
+          echo "Creating/updating RunPod template for ${{ env.FULL_IMAGE_NAME }}"
+          
+          # Split full image name into components
+          FULL_IMAGE="${{ env.FULL_IMAGE_NAME }}"
+
+          # Extract username/image (everything before the last colon)
+          IMAGE_WITH_USER="${FULL_IMAGE%:*}"
+          
+          # Extract tag (everything after the last colon)
+          TAG="${FULL_IMAGE##*:}"
+          
+          # Extract just the image name (after the /)
+          IMAGE_NAME="${IMAGE_WITH_USER##*/}"
+
+          # Extract username (before the /)
+          USERNAME="${IMAGE_WITH_USER%/*}"
+          
+          ARGS=(
+            --name "${{ env.TEMPLATE_NAME }}"
+            --image "${{ env.FULL_IMAGE_NAME }}"
+            --container-disk ${{ inputs.container_disk }}
+            --volume ${{ inputs.volume }}
+            --create-if-not-exists
+          )
+
+          if [[ "${{ inputs.is_serverless }}" == "false" ]]; then
+            ARGS+=(--non-serverless)
+          fi
+
+          if [[ -n "${{ inputs.env_vars }}" ]]; then
+            while IFS= read -r line; do
+              [[ -z "$line" ]] && continue
+              ARGS+=(--env "$line")
+            done <<< "${{ inputs.env_vars }}"
+          fi
+          
+          export PYTHONPATH="${GITHUB_WORKSPACE}/src"
+          
+          python -m runpod_mgmt.template.create_template "${ARGS[@]}"          
+          echo "GITHUB OUTPUT: ${GITHUB_OUTPUT}"
+      
+      - name: Template creation result
+        if: success()
+        run: |
+          echo "✓ RunPod template successfully created/updated"
+          echo "Image: ${{ env.FULL_IMAGE_NAME }}"
+          echo "Template ID: ${{ steps.run.outputs.template_id }}"

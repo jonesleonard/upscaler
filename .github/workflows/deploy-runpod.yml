@@ -1,0 +1,48 @@
+name: Build, Push, and Deploy
+
+on:
+  workflow_call:
+    inputs:
+      docker_username:
+        description: 'DockerHub username'
+        required: true
+        type: string
+      image_name:
+        description: 'Docker image name'
+        required: true
+        type: string
+      tag:
+        description: 'Docker image tag (default: latest)'
+        required: true
+        type: string
+      seedvr2_repo:
+        description: 'SeedVR2 repository to use'
+        required: true
+        type: string
+      seedvr2_ref:
+        description: 'SeedVR2 version to use'
+        required: true
+        type: string
+    secrets:
+      dockerhub_token:
+        description: 'DockerHub access token'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    uses: ./.github/workflows/docker-build-push.yml
+    with:
+      dockerhub_username: ${{ inputs.docker_username }}
+      image_name: ${{ inputs.image_name }}
+      tag: ${{ inputs.tag || 'latest' }}
+      build_args: |
+        SEEDVR2_REPO=${{ inputs.seedvr2_repo  }}
+        SEEDVR2_REF=${{ inputs.seedvr2_ref  }}
+    secrets:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  
+  

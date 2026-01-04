@@ -45,3 +45,15 @@ jobs:
           container_path: "./src/containers/splitter"
           job_definition_name: ${{ needs.deploy-terraform.outputs.batch_split_job_definition_name }}
         secrets: inherit
+    deploy-runpod-upscaler:
+        name: Deploy RunPod Upscaler
+        uses: ./.github/workflows/deploy-runpod.yml
+        needs: deploy-terraform
+        with:
+          docker_username: ${{ vars.DOCKERHUB_USERNAME }}
+          image_name: 'seedvr2-upscaler'
+          tag: ${{ github.ref_name }}
+          seedvr2_repo: "https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git"
+          seedvr2_ref: "v2.5.23"
+        secrets:
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
