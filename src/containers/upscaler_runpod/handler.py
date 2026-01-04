@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
-import runpod_mgmt
+import runpod
 from tqdm import tqdm
 
 level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -308,4 +308,4 @@ def upscale_segment(job: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # RunPod handler
-runpod_mgmt.serverless.start({"handler": upscale_segment})
+runpod.serverless.start({"handler": upscale_segment})

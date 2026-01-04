@@ -11,7 +11,7 @@ import argparse
 import logging
 import traceback
 from typing import Optional, Dict, Any
-import runpod_mgmt
+import runpod
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -57,9 +57,9 @@ def create_pod(
     if not template_id and not image_name:
         raise ValueError("Either template_id or image_name must be provided")
 
-    runpod_mgmt.api_key = api_key
+    runpod.api_key = api_key
 
-    response = runpod_mgmt.create_pod(
+    response = runpod.create_pod(
         name=name,
         image_name=image_name or "",
         gpu_type_id=gpu_type_id,

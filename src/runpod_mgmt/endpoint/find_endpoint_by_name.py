@@ -7,7 +7,7 @@ The RunPod SDK provides get_endpoints(), which we use to search by name.
 import os
 import logging
 from typing import Optional, Dict, Any
-import runpod_mgmt
+import runpod
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,13 +32,13 @@ def find_endpoint_by_name(name: str, api_key: Optional[str] = None) -> Optional[
         if not api_key:
             raise ValueError("RUNPOD_API_KEY environment variable is required")
     
-    runpod_mgmt.api_key = api_key
+    runpod.api_key = api_key
     
     try:
         logger.info(f"Searching for endpoint with name: {name}")
         
         # Get all endpoints
-        endpoints = runpod_mgmt.get_endpoints()
+        endpoints = runpod.get_endpoints()
         
         if not endpoints:
             logger.info("No endpoints found")

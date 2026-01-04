@@ -9,7 +9,7 @@ import sys
 import argparse
 import logging
 from typing import Optional, Any
-import runpod_mgmt
+import runpod
 from .find_endpoint_by_name import find_endpoint_by_name
 from .update_endpoint import update_endpoint
 
@@ -66,7 +66,7 @@ def create_or_update_endpoint(
     if not api_key:
         raise ValueError("RUNPOD_API_KEY environment variable is required")
     
-    runpod_mgmt.api_key = api_key
+    runpod.api_key = api_key
     normalized_gpu_ids = _normalize_ids_for_sdk(gpu_ids)
     normalized_data_center_ids = _normalize_ids_for_sdk(data_center_ids)
     
@@ -117,7 +117,7 @@ def create_or_update_endpoint(
     logger.info(f"Creating new endpoint: {name}")
     
     try:
-        response = runpod_mgmt.create_endpoint(
+        response = runpod.create_endpoint(
             name=name,
             template_id=template_id,
             gpu_ids=normalized_gpu_ids,
