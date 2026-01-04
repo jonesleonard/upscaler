@@ -56,10 +56,60 @@ on:
         required: false
         type: number
         default: 50
+      endpoint_name:
+        description: 'RunPod endpoint name'
+        required: false
+        type: string
+        default: 'seedvr2_upscaler_endpoint'
+      endpoint_data_center_id:
+        description: 'RunPod endpoint data center ID'
+        required: true
+        type: string
+      endpoint_gpu_ids:
+        description: 'RunPod endpoint GPU IDs'
+        required: false
+        type: string
+        default: 'NVIDIA A40'
+      endpoint_workers_min:
+        description: 'RunPod endpoint minimum number of workers'
+        required: false
+        type: number
+        default: 0
+      endpoint_workers_max:
+        description: 'RunPod endpoint maximum number of workers'
+        required: false
+        type: number
+        default: 1
+      endpoint_idle_timeout:    
+        description: 'RunPod endpoint idle timeout in seconds'
+        required: false
+        type: number
+        default: 5
+      endpoint_execution_timeout_ms:
+        description: 'RunPod endpoint execution timeout in milliseconds'
+        required: false
+        type: number
+        default: 600000
+      endpoint_scaler_type:
+        description: 'RunPod endpoint scaler type'
+        required: false
+        type: string
+        default: 'QUEUE_DELAY'
+      endpoint_scaler_value:
+        description: 'RunPod endpoint scaler value'
+        required: false
+        type: number
+        default: 4
     outputs:
       network_volume_id:
         description: "The ID of the created/updated network volume"
         value: ${{ jobs.create-update-runpod-network-volume.outputs.network_volume_id }}
+      template_id:
+        description: "The ID of the created/updated template"
+        value: ${{ jobs.create-update-runpod-template.outputs.template_id }}
+      endpoint_id:
+        description: "The ID of the created/updated endpoint"
+        value: ${{ jobs.create-update-endpoint.outputs.endpoint_id }}
     secrets:
       dockerhub_token:
         description: 'DockerHub access token'
@@ -135,17 +185,17 @@ jobs:
       environment: "dev"
       python_version: ${{ inputs.python_script_version }}
       runpod_rest_api_base_url: ${{ inputs.runpod_rest_api_base_url }}
-      endpoint_name: 'seedvr2_upscaler_endpoint_dev'
+      endpoint_name: ${{ inputs.endpoint_name }}
       network_volume_id: ${{ needs.create-update-runpod-network-volume.outputs.network_volume_id }}
       template_id: ${{ needs.create-update-runpod-template.outputs.template_id }}
-      data_center_id: "US-KS-2"
-      gpu_ids: "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-80GB"
-      workers_min: 0
-      workers_max: 2
-      idle_timeout: 5
-      execution_timeout_ms: 3600000
-      scaler_type: "QUEUE_DELAY"
-      scaler_value: 4
+      data_center_id: ${{ inputs.endpoint_data_center_id }}
+      gpu_ids: ${{ inputs.endpoint_gpu_ids }}
+      workers_min: ${{ inputs.endpoint_workers_min }}
+      workers_max: ${{ inputs.endpoint_workers_max }}
+      idle_timeout: ${{ inputs.endpoint_idle_timeout }}
+      execution_timeout_ms: ${{ inputs.endpoint_execution_timeout_ms }}
+      scaler_type: ${{ inputs.endpoint_scaler_type }}
+      scaler_value: ${{ inputs.endpoint_scaler_value }}
     secrets:
       RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
   
