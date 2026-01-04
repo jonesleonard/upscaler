@@ -288,6 +288,35 @@ class TestProcessSingleRequest:
         assert result["expires_in"] == 3600
 
     @mock_aws
+    def test_process_get_request_with_name(self, test_bucket):
+        """Test processing a GET request with name parameter."""
+        import index
+        index._S3_CLIENT = boto3.client("s3", region_name="us-east-1")
+        index._S3_CLIENT.create_bucket(Bucket=test_bucket)
+        index._S3_CLIENT.put_object(
+            Bucket=test_bucket,
+            Key="file.mp4",
+            Body=b"content",
+        )
+        
+        request = {
+            "bucket": test_bucket,
+            "key": "file.mp4",
+            "operation": "get",
+            "name": "input_video",
+        }
+        
+        result = _process_single_request(request, 3600)
+        
+        assert result["success"] is True
+        assert result["name"] == "input_video"
+        assert result["bucket"] == test_bucket
+        assert result["key"] == "file.mp4"
+        assert result["operation"] == "get"
+        assert "url" in result
+        assert result["expires_in"] == 3600
+
+    @mock_aws
     def test_process_put_request(self, test_bucket):
         """Test processing a PUT request."""
         import index
@@ -337,6 +366,21 @@ class TestProcessSingleRequest:
         result = _process_single_request(request, 3600)
         
         assert result["success"] is False
+        assert "Missing required field: bucket" in result["error"]
+        assert result["request"] == request
+
+    def test_process_request_error_with_name(self):
+        """Test processing request with error includes name if provided."""
+        request = {
+            "key": "file.mp4",
+            "operation": "get",
+            "name": "failed_request",
+        }
+        
+        result = _process_single_request(request, 3600)
+        
+        assert result["success"] is False
+        assert result["name"] == "failed_request"
         assert "Missing required field: bucket" in result["error"]
         assert result["request"] == request
 
@@ -477,6 +521,50 @@ class TestLambdaHandler:
         assert body["summary"]["failed"] == 0
 
     @mock_aws
+    def test_handler_batch_requests_with_names(self, test_bucket):
+        """Test handler with batch requests including name parameters."""
+        import index
+        index._S3_CLIENT = boto3.client("s3", region_name="us-east-1")
+        index._S3_CLIENT.create_bucket(Bucket=test_bucket)
+        
+        event = {
+            "requests": [
+                {
+                    "bucket": test_bucket,
+                    "key": "file1.mp4",
+                    "operation": "get",
+                    "name": "input_video",
+                },
+                {
+                    "bucket": test_bucket,
+                    "key": "file2.mp4",
+                    "operation": "put",
+                    "content_type": "video/mp4",
+                    "name": "output_video",
+                },
+                {
+                    "bucket": test_bucket,
+                    "key": "file3.mp4",
+                    "operation": "get",
+                    "name": "thumbnail",
+                },
+            ]
+        }
+        
+        response = lambda_handler(event, None)
+        
+        assert response["statusCode"] == 200
+        body = json.loads(response["body"])
+        assert body["summary"]["total"] == 3
+        assert body["summary"]["successful"] == 3
+        assert body["summary"]["failed"] == 0
+        
+        # Verify names are preserved in responses
+        assert body["results"][0]["name"] == "input_video"
+        assert body["results"][1]["name"] == "output_video"
+        assert body["results"][2]["name"] == "thumbnail"
+
+    @mock_aws
     def test_handler_partial_failure(self, test_bucket):
         """Test handler with partial failures."""
         import index
@@ -506,6 +594,41 @@ class TestLambdaHandler:
         assert body["summary"]["failed"] == 1
         assert body["results"][0]["success"] is True
         assert body["results"][1]["success"] is False
+
+    @mock_aws
+    def test_handler_partial_failure_with_names(self, test_bucket):
+        """Test handler with partial failures including name parameters."""
+        import index
+        index._S3_CLIENT = boto3.client("s3", region_name="us-east-1")
+        index._S3_CLIENT.create_bucket(Bucket=test_bucket)
+        
+        event = {
+            "requests": [
+                {
+                    "bucket": test_bucket,
+                    "key": "valid.mp4",
+                    "operation": "get",
+                    "name": "success_case",
+                },
+                {
+                    "key": "missing-bucket.mp4",
+                    "operation": "get",
+                    "name": "failure_case",
+                },
+            ]
+        }
+        
+        response = lambda_handler(event, None)
+        
+        assert response["statusCode"] == 207  # Multi-Status
+        body = json.loads(response["body"])
+        assert body["summary"]["total"] == 2
+        assert body["summary"]["successful"] == 1
+        assert body["summary"]["failed"] == 1
+        assert body["results"][0]["success"] is True
+        assert body["results"][0]["name"] == "success_case"
+        assert body["results"][1]["success"] is False
+        assert body["results"][1]["name"] == "failure_case"
 
     def test_handler_missing_requests_field(self):
         """Test handler with missing requests field."""

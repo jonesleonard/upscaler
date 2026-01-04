@@ -127,6 +127,7 @@ def _process_single_request(
         bucket = _require_field(request, "bucket")
         key = _require_field(request, "key")
         operation = _require_field(request, "operation").lower()
+        name = request.get("name")
         
         # Get expiration time (request-specific or default)
         expires = request.get("expires", default_expires)
@@ -151,7 +152,7 @@ def _process_single_request(
         else:
             raise ValueError(f"Invalid operation: {operation}. Must be 'get' or 'put'.")
         
-        return {
+        result = {
             "success": True,
             "bucket": bucket,
             "key": key,
@@ -159,13 +160,26 @@ def _process_single_request(
             "url": url,
             "expires_in": expires,
         }
+        
+        # Include name in response if provided
+        if name is not None:
+            result["name"] = name
+        
+        return result
     
     except Exception as exc:
-        return {
+        error_result = {
             "success": False,
             "error": str(exc),
             "request": request,
         }
+        
+        # Include name in error response if provided
+        name = request.get("name")
+        if name is not None:
+            error_result["name"] = name
+        
+        return error_result
 
 
 def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
