@@ -64,9 +64,8 @@
       },
       "ResultPath": "$",
       "Next": "UpscaleSegmentsRunPod"
-    }
-  },
-  "UpscaleSegmentsRunPod": {
+    },
+      "UpscaleSegmentsRunPod": {
       "Type": "Map",
       "ItemsPath": "$.manifest.segments",
       "MaxConcurrency": "$.runpod.batch_max_concurrency",
@@ -111,4 +110,5 @@
       "ResultPath": "$.upscale_results",
       "End": true
     }
+  }
 }
