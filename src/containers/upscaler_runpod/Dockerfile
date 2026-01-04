@@ -42,8 +42,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy handler and shell script
-COPY handler.py /app/
-COPY upscale_segment.sh /app/
+COPY handler.py upscale_segment.sh /app/
 RUN chmod +x /app/upscale_segment.sh
 
 # Create work directories

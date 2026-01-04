@@ -64,6 +64,7 @@ jobs:
           seedvr2_ref: "v2.5.23"
           python_script_version: "3.12"
           runpod_rest_api_base_url: "https://rest.runpod.io/v1"
+          # network volume
           network_volume_name: "seedvr2_upscaler_dev"
           network_volume_size: 30
           network_volume_data_center_id: "US-KS-2"
