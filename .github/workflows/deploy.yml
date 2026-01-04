@@ -35,6 +35,7 @@ jobs:
           environment: dev
           terraform_version: "1.14.3"
           working_directory: "./src/terraform"
+          tf_var_runpod_max_concurrency: 5
         secrets: inherit
   # ============================================================================
   # Deploy ECR Splitter Image

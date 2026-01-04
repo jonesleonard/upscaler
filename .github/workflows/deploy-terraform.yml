@@ -24,6 +24,11 @@ on:
         required: false
         type: string
         default: "./src/terraform"
+      tf_var_runpod_max_concurrency:
+        description: "Max concurrency for RunPod jobs"
+        required: false
+        type: number
+        default: 1
     outputs:
       ecr_splitter_repository_name:
         description: "ECR Repository Name for Splitter Repository"
@@ -164,11 +169,15 @@ jobs:
         shell: bash
 
       - name: Create terraform.tfvars
+        env:
+            RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
         run: |
           cat > terraform.tfvars << EOF
           region       = "${{ vars.AWS_REGION }}"
           environment  = "dev"
           project_name = "${{ vars.PROJECT_NAME || 'upscaler' }}"
+          runpod_api_key = "${{ env.RUNPOD_API_KEY }}"
+          runpod_max_concurrency = ${{ inputs.tf_var_runpod_max_concurrency }}
           EOF
 
       - name: Terraform Init
@@ -279,11 +288,15 @@ jobs:
         shell: bash
 
       - name: Create terraform.tfvars
+        env:
+            RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
         run: |
           cat > terraform.tfvars << EOF
-          region       = "${{ vars.AWS_REGION || 'us-east-1' }}"
+          region       = "${{ vars.AWS_REGION }}"
           environment  = "dev"
           project_name = "${{ vars.PROJECT_NAME || 'upscaler' }}"
+          runpod_api_key = "${{ env.RUNPOD_API_KEY }}"
+          runpod_max_concurrency = ${{ inputs.tf_var_runpod_max_concurrency }}
           EOF
 
       - name: Terraform Init
