@@ -52,6 +52,7 @@ module "presign_model_urls_lambda" {
       actions = ["s3:GetObject"],
       resources = [
         "${var.upscale_video_bucket_arn}/input/*",
+        "${var.upscale_video_bucket_arn}/raw/*",
         "${var.upscale_video_bucket_arn}/runs/*",
         "${var.upscale_video_bucket_arn}/models/*"
       ],
