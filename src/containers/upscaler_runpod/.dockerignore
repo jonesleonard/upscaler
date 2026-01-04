@@ -30,3 +30,11 @@ build
 
 # Logs
 *.log
+
+# Testing
+tests/
+*.test.py
+
+# Environment
+.env*
+!.env.example
