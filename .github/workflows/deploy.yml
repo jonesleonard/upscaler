@@ -48,7 +48,6 @@ jobs:
     deploy-runpod-upscaler:
         name: Deploy RunPod Upscaler
         uses: ./.github/workflows/deploy-runpod.yml
-        needs: deploy-terraform
         with:
           docker_username: ${{ vars.DOCKERHUB_USERNAME }}
           image_name: 'seedvr2-upscaler'
