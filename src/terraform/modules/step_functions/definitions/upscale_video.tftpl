@@ -63,6 +63,7 @@
         "runpod.$": "$.runpod",
         "upscale.$": "$.upscale",
         "combine_job_definition.$": "$.combine_job_definition",
+        "presign_expire_secs.$": "$.presign_expire_secs",
         "manifest.$": "States.StringToJson($.manifest_obj.Body)"
       },
       "ResultPath": "$",
@@ -78,6 +79,7 @@
         "recommendations.$": "$.manifest.metadata.recommendations",
         "runpod.$": "$.runpod",
         "upscale.$": "$.upscale",
+        "presign_expire_secs.$": "$.presign_expire_secs",
         "combine_job_definition.$": "$.combine_job_definition"
       },
       "Iterator": {
@@ -95,7 +97,7 @@
                     "bucket": "${BUCKET_NAME}",
                     "key.$": "States.Format('runs/{}/raw/{}', $.exec_id, $.segment.filename)",
                     "operation": "get",
-                    "expires": "3600"
+                    "expires.$": "$.presign_expire_secs"
                   },
                   {
                     "name": "output",
@@ -103,7 +105,7 @@
                     "key.$": "States.Format('runs/{}/upscaled/{}', $.exec_id, $.segment.filename)",
                     "operation": "put",
                     "server_side_encryption": "AES256",
-                    "expires": "3600"
+                    "expires.$": "$.presign_expire_secs"
                   }
                 ]
               }
