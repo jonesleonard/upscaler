@@ -62,6 +62,7 @@
         "splitter.$": "$.splitter",
         "runpod.$": "$.runpod",
         "upscale.$": "$.upscale",
+        "combine_job_definition.$": "$.combine_job_definition",
         "manifest.$": "States.StringToJson($.manifest_obj.Body)"
       },
       "ResultPath": "$",
@@ -76,7 +77,8 @@
         "segment.$": "$$.Map.Item.Value",
         "recommendations.$": "$.manifest.metadata.recommendations",
         "runpod.$": "$.runpod",
-        "upscale.$": "$.upscale"
+        "upscale.$": "$.upscale",
+        "combine_job_definition.$": "$.combine_job_definition"
       },
       "Iterator": {
         "StartAt": "PresignSegmentIO",
@@ -118,6 +120,7 @@
               "recommendations.$": "$.recommendations",
               "runpod.$": "$.runpod",
               "upscale.$": "$.upscale",
+              "combine_job_definition.$": "$.combine_job_definition",
               "presigned_urls.$": "States.StringToJson($.io_presigns.Payload.body)"
             },
             "ResultPath": "$",
@@ -132,6 +135,7 @@
               "recommendations.$": "$.recommendations",
               "runpod.$": "$.runpod",
               "upscale.$": "$.upscale",
+              "combine_job_definition.$": "$.combine_job_definition",
               "input_presigned_url.$": "$.presigned_urls.results[?(@.name == 'input')].url",
               "output_presigned_url.$": "$.presigned_urls.results[?(@.name == 'output')].url"
             },
