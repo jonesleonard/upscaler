@@ -86,13 +86,13 @@
                 "requests": [
                   {
                     "bucket": "${BUCKET_NAME}",
-                    "key": "States.Format('runs/{}/raw/{}', $.exec_id, $.segment.filename)",
+                    "key.$": "States.Format('runs/{}/raw/{}', $.exec_id, $.segment.filename)",
                     "operation": "get",
                     "expires": "3600"
                   },
                   {
                     "bucket": "${BUCKET_NAME}",
-                    "key": "States.Format('runs/{}/upscaled/{}', $.exec_id, $.segment.filename)",
+                    "key.$": "States.Format('runs/{}/upscaled/{}', $.exec_id, $.segment.filename)",
                     "operation": "put",
                     "server_side_encryption": "AES256",
                     "expires": "3600"
