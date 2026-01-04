@@ -68,7 +68,7 @@
       "UpscaleSegmentsRunPod": {
       "Type": "Map",
       "ItemsPath": "$.manifest.segments",
-      "MaxConcurrency": "${RUNPOD_MAX_CONCURRENCY}",
+      "MaxConcurrency": $.runpod.batch_max_concurrency,
       "Parameters": {
         "exec_id.$": "$.exec_id",
         "upscale.$": "$.upscale",
