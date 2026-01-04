@@ -46,6 +46,16 @@ on:
         description: 'RunPod network volume data center ID'
         required: true
         type: string
+      template_name:
+        description: 'RunPod template name'
+        required: false
+        type: string
+        default: 'seedvr2_upscaler'
+      template_container_disk:
+        description: 'RunPod template container disk size in GB'
+        required: false
+        type: number
+        default: 50
     outputs:
       network_volume_id:
         description: "The ID of the created/updated network volume"
@@ -64,7 +74,7 @@ permissions:
 
 jobs:
   # ============================================================================
-  # Build and Push SeedVR2 Upscaler Docker Image
+  # Docker: Build and Push SeedVR2 Upscaler Image
   # ============================================================================
   build-and-push-seedvr2-image:
     name: Build and Push Docker Image
@@ -80,19 +90,35 @@ jobs:
         SEEDVR2_REF=${{ inputs.seedvr2_ref  }}
     secrets:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  # ============================================================================
+  # RunPod: Create/Update Template
+  # ============================================================================
+  create-update-runpod-template:
+    name: Create/Update RunPod Template
+    needs: build-and-push-seedvr2-image
+    uses: ./.github/workflows/runpod-template.yml
+    with:
+      python_version: ${{ inputs.python_script_version }}
+      runpod_rest_api_base_url: ${{ inputs.runpod_rest_api_base_url }}
+      full_image_name: ${{ needs.build-and-push-seedvr2-image.outputs.full_image_name }}
+      template_name: ${{ inputs.template_name }}
+      container_disk: ${{ inputs.template_container_disk }}
+    secrets:
+      RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
   
   # ============================================================================
-  # Create/Update RunPod Network Volume
+  # RunPod: Create/Update Network Volume
   # ============================================================================
   create-update-runpod-network-volume:
     name: Create/Update RunPod Network Volume
     uses: ./.github/workflows/runpod-network-volume.yml
     with:
+      python_version: ${{ inputs.python_script_version }}
       runpod_rest_api_base_url: ${{ inputs.runpod_rest_api_base_url }}
       network_volume_name: ${{ inputs.network_volume_name }}
       data_center_id: ${{ inputs.network_volume_data_center_id }}
       network_volume_size: ${{ inputs.network_volume_size }}
-      python_version: ${{ inputs.python_script_version }}
     secrets:
       RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
   

@@ -67,4 +67,7 @@ jobs:
           network_volume_name: "seedvr2_upscaler_dev"
           network_volume_size: 30
           network_volume_data_center_id: "US-KS-2"
+          # template
+          template_name: "seedvr2_upscaler_dev"
+          template_container_disk: 60
         secrets: inherit
