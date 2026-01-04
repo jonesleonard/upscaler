@@ -86,6 +86,7 @@ jobs:
           # template
           template_name: "seedvr2_upscaler_dev"
           template_container_disk: 60
+          template_volume_in_gb: 30
           # endpoint
           endpoint_name: "seedvr2_upscaler_dev"
           endpoint_data_center_id: "US-KS-2"

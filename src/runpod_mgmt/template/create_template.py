@@ -195,7 +195,7 @@ Environment Variables:
     )
     
     parser.add_argument(
-        "--volume",
+        "--volume-in-gb",
         type=int,
         default=50,
         help="Volume size in GB (default: 50)"
@@ -232,7 +232,7 @@ Environment Variables:
             name=args.name,
             image=args.image,
             container_disk_in_gb=args.container_disk,
-            volume_in_gb=args.volume,
+            volume_in_gb=args.volume_in_gb,
             is_serverless=args.is_serverless,
             env_vars=env_vars if env_vars else None,
             template_id=args.template_id

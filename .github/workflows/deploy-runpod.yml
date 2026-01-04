@@ -56,6 +56,11 @@ on:
         required: false
         type: number
         default: 50
+      template_volume_in_gb:
+        description: 'RunPod template volume size in GB'
+        required: false
+        type: number
+        default: 20
       endpoint_name:
         description: 'RunPod endpoint name'
         required: false
