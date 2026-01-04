@@ -101,7 +101,15 @@
               }
             },
             "ResultPath": "$.io_presigns",
-            "End": true
+            "Next": "ParsePresignResponse"
+          },
+          "ParsePresignResponse": {
+            "Type": "Pass",
+            "Parameters": {
+              "presign_uris.$": "States.StringToJson($.io_presigns.Payload.body)"
+            },
+            "ResultPath": "$.presign_uris_response",
+            "Next": "UpscaleSegmentsRunPod"
           }
         }
       },
