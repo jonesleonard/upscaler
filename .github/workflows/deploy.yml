@@ -72,7 +72,7 @@ jobs:
           template_name: "seedvr2_upscaler_dev"
           template_container_disk: 60
           # endpoint
-          endpoint_name: "seedvr2-upscaler-dev"
+          endpoint_name: "seedvr2_upscaler_dev"
           endpoint_data_center_id: "US-KS-2"
           endpoint_gpu_ids: "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-80GB"
           endpoint_workers_min: 0
