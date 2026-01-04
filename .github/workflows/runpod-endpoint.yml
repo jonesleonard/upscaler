@@ -96,10 +96,10 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
           cache: 'pip'
-          cache-dependency-path: 'src/runpod/requirements.txt'
+          cache-dependency-path: 'src/runpod_mgmt/requirements.txt'
       
       - name: Install dependencies
-        run: pip install -r src/runpod/requirements.txt
+        run: pip install -r src/runpod_mgmt/requirements.txt
       
       - name: Create or update RunPod endpoint
         id: run
@@ -138,7 +138,7 @@ jobs:
             ARGS+=(--data-center-ids "$DATA_CENTER_ID")
           fi
           
-          python -m runpod.endpoint.create_endpoint "${ARGS[@]}"
+          python -m runpod_mgmt.endpoint.create_endpoint "${ARGS[@]}"
       
       - name: Endpoint creation result
         if: success()
