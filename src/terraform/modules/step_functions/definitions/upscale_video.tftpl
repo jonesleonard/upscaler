@@ -63,7 +63,51 @@
         "manifest.$": "States.StringToJson($.manifest_obj.Body)"
       },
       "ResultPath": "$",
+      "Next": "UpscaleSegmentsRunPod"
+    }
+  },
+  "UpscaleSegmentsRunPod": {
+      "Type": "Map",
+      "ItemsPath": "$.manifest.segments",
+      "MaxConcurrency": "$.runpod.batch_max_concurrency",
+      "Parameters": {
+        "exec_id.$": "$.exec_id",
+        "upscale.$": "$.upscale",
+        "runpod.$": "$.runpod",
+        "segment.$": "$$.Map.Item.Value",
+        "recommendations.$": "$.manifest.metadata.recommendations"
+      },
+      "Iterator": {
+        "StartAt": "PresignSegmentIO",
+        "States": {
+          "PresignSegmentIO": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${PRESIGN_SEGMENT_LAMBDA_ARN}",
+              "Payload": {
+                "requests": [
+                  {
+                    "bucket": "${BUCKET_NAME}",
+                    "key": "States.Format('runs/{}/raw/{}', $.exec_id, $.segment.filename)",
+                    "operation": "get",
+                    "expires": "3600"
+                  }
+                  {
+                    "bucket": "${BUCKET_NAME}",
+                    "key": "States.Format('runs/{}/upscaled/{}', $.exec_id, $.segment.filename)",
+                    "operation": "put",
+                    "server_side_encryption": "AES256",
+                    "expires": "3600"
+                  }
+                ]
+              }
+            },
+            "ResultPath": "$.io_presigns"
+          }
+        }
+      },
+      "ResultPath": "$.upscale_results",
       "End": true
     }
-  }
 }
