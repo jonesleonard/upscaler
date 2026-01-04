@@ -1,4 +1,4 @@
-name: Create RunPod Pod
+name: RunPod Pod Management
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Create or Update RunPod Network Volume
+name: RunPod Network Volume Management
 
 on:
   workflow_call:

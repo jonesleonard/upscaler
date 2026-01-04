@@ -1,6 +1,6 @@
 # .github/workflows/deploy-ecr-image.yml
 
-name: Build and Deploy ECR Container
+name: Build and Deploy ECR Image
 
 on:
   workflow_call:

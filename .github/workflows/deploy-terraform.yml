@@ -1,6 +1,6 @@
 # .github/workflows/terraform-deploy.yml
 
-name: Terraform Deploy
+name: Deploy Terraform
 
 on:
   workflow_call:

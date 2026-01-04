@@ -1,12 +1,8 @@
-name: Create or Update RunPod Endpoint
+name: RunPod Endpoint Management
 
 on:
   workflow_call:
     inputs:
-      endpoint_name:
-        description: 'RunPod endpoint name'
-        required: true
-        type: string
       environment:
         description: 'The environment to deploy to (e.g., dev, prod)'
         required: true
@@ -15,11 +11,19 @@ on:
         description: 'RunPod REST API base URL'
         required: true
         type: string
+      python_version:
+        description: 'Python version to use for the script that executes the API calls'
+        required: false
+        type: string
+        default: '3.13'
+      endpoint_name:
+        description: 'RunPod endpoint name'
+        required: true
+        type: string
       network_volume_id:
         description: 'RunPod network volume ID for persistent model storage'
         required: false
         type: string
-        default: ''
       template_id:
         description: 'RunPod template ID to use'
         required: true
@@ -63,11 +67,6 @@ on:
         required: false
         type: number
         default: 4
-      python_version:
-        description: 'Python version to use'
-        required: false
-        type: string
-        default: '3.13'
     secrets:
       RUNPOD_API_KEY:
         required: true

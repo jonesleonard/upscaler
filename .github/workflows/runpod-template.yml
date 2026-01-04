@@ -1,4 +1,4 @@
-name: Create or Update RunPod Template
+name: RunPod Template Management
 
 on:
   workflow_call:
