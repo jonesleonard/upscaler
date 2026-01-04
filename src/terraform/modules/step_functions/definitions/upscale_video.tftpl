@@ -252,7 +252,7 @@
         }
       },
       "ResultPath": "$.upscale_results",
-      "End": true
+      "Next": "CombineSegments"
     },
     "CombineSegments": {
       "Type": "Task",
@@ -273,6 +273,5 @@
       "ResultPath": "$.combine",
       "End": true
     }
-  }
   }
 }
