@@ -234,8 +234,24 @@ split_video() {
         split_args+=(--vcodec "$v_codec" --acodec "$a_codec" --abitrate "$a_bitrate")
     fi
 
-    if ! python3 /app/split_video_exact.py "${split_args[@]}"; then
-        log_error "Failed to split video"
+    # Capture output from Python script for better error diagnostics
+    local split_output
+    local split_exit_code
+    set +e
+    split_output=$(python3 /app/split_video_exact.py "${split_args[@]}" 2>&1)
+    split_exit_code=$?
+    set -e
+
+    # Always log the Python script output
+    if [[ -n "$split_output" ]]; then
+        echo "$split_output"
+    fi
+
+    if [[ $split_exit_code -ne 0 ]]; then
+        log_error "Failed to split video (exit code: $split_exit_code)"
+        if [[ -n "$split_output" ]]; then
+            log_error "Python script output: $split_output"
+        fi
         exit 1
     fi
 
