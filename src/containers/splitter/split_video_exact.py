@@ -242,14 +242,14 @@ def build_reencode_command(
     cmd = [
         "ffmpeg", "-hide_banner", "-y",
         "-i", input_path,
-        "-map", "0",
+        # Map only primary video and all audio streams (not thumbnails/alternate streams)
+        "-map", "0:v:0",  # First video stream only
+        "-map", "0:a?",   # All audio streams (? makes it optional if no audio)
     ]
 
     # Add video filter to ensure dimensions are divisible by 2 (required by libx264/libx265)
-    # scale=-2:-2 will:
-    # - Keep dimensions if already even
-    # - Round down to nearest even number if odd
-    # This maintains aspect ratio while ensuring codec compatibility
+    # This handles edge cases where the primary stream has odd dimensions
+    # scale formula rounds down to nearest even number while maintaining aspect ratio
     if vcodec in ("libx264", "libx265", "h264_nvenc", "hevc_nvenc"):
         cmd += ["-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2"]
 
