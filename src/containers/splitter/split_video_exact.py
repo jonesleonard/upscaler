@@ -243,8 +243,17 @@ def build_reencode_command(
         "ffmpeg", "-hide_banner", "-y",
         "-i", input_path,
         "-map", "0",
-        "-c:v", vcodec,
     ]
+
+    # Add video filter to ensure dimensions are divisible by 2 (required by libx264/libx265)
+    # scale=-2:-2 will:
+    # - Keep dimensions if already even
+    # - Round down to nearest even number if odd
+    # This maintains aspect ratio while ensuring codec compatibility
+    if vcodec in ("libx264", "libx265", "h264_nvenc", "hevc_nvenc"):
+        cmd += ["-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2"]
+
+    cmd += ["-c:v", vcodec]
 
     # CRF only applies to x264/x265-style encoders
     if vcodec in ("libx264", "libx265"):
