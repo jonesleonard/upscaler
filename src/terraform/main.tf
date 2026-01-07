@@ -148,6 +148,17 @@ module "batch" {
 }
 
 ################################################################################
+# DynamoDB
+################################################################################
+
+module "dynamodb" {
+  source       = "./modules/dynamodb"
+  environment  = var.environment
+  project_name = var.project_name
+  tags         = local.tags
+}
+
+################################################################################
 # EventBridge (RunPod Connection)
 ################################################################################
 
@@ -187,7 +198,8 @@ module "step_functions" {
   upscale_video_combine_job_definition_arn = module.batch.combine_job_definition_arn
 
   # Lambda Configuration
-  presign_s3_urls_lambda_function_arn = module.lambda.presign_model_urls_lambda_function_arn
+  presign_s3_urls_lambda_function_arn   = module.lambda.presign_model_urls_lambda_function_arn
+  submit_runpod_job_lambda_function_arn = module.lambda.submit_runpod_job_lambda_function_arn
 
   # RunPod Configuration
   runpod_base_api_endpoint = var.runpod_base_api_endpoint
@@ -208,4 +220,27 @@ module "lambda" {
 
   # S3 Bucket
   upscale_video_bucket_arn = module.s3.bucket_arn
+
+  # DynamoDB
+  runpod_callbacks_dynamodb_table_arn = module.dynamodb.runpod_callbacks_table_arn
+
+  # API Gateway
+  runpod_webhook_handler_api_gateway_execution_arn = module.api_gateway.runpod_webhook_handler_api_gateway_execution_arn
+
+  # RunPod Configuration
+  runpod_api_key_secret_arn = var.runpod_api_key_secret_arn
+}
+
+################################################################################
+# API Gateway
+################################################################################
+
+module "api_gateway" {
+  source       = "./modules/api_gateway"
+  environment  = var.environment
+  project_name = var.project_name
+  tags         = local.tags
+
+  # Lambda Configuration
+  runpod_webhook_handler_lambda_arn = module.lambda.runpod_webhook_handler_lambda_function_arn
 }

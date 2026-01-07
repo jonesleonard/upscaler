@@ -79,8 +79,7 @@
         "recommendations.$": "$.manifest.metadata.recommendations",
         "runpod.$": "$.runpod",
         "upscale.$": "$.upscale",
-        "presign_expire_secs.$": "$.presign_expire_secs",
-        "combine_job_definition.$": "$.combine_job_definition"
+        "presign_expire_secs.$": "$.presign_expire_secs"
       },
       "Iterator": {
         "StartAt": "PresignSegmentIO",
@@ -117,149 +116,68 @@
           "ParsePresignResponse": {
             "Type": "Pass",
             "Parameters": {
-              "exec_id.$": "$.exec_id",
-              "segment.$": "$.segment",
-              "recommendations.$": "$.recommendations",
-              "runpod.$": "$.runpod",
-              "upscale.$": "$.upscale",
-              "combine_job_definition.$": "$.combine_job_definition",
-              "presigned_urls.$": "States.StringToJson($.io_presigns.Payload.body)"
+              "results.$": "States.StringToJson($.io_presigns.Payload.body).results"
             },
-            "ResultPath": "$",
+            "ResultPath": "$.presigned_urls",
             "Next": "ExtractPresignedURLs"
           },
 
           "ExtractPresignedURLs": {
             "Type": "Pass",
             "Parameters": {
-              "exec_id.$": "$.exec_id",
-              "segment.$": "$.segment",
-              "recommendations.$": "$.recommendations",
-              "runpod.$": "$.runpod",
-              "upscale.$": "$.upscale",
-              "combine_job_definition.$": "$.combine_job_definition",
-              "input_presigned_url.$": "$.presigned_urls.results[?(@.name == 'input')].url",
-              "output_presigned_url.$": "$.presigned_urls.results[?(@.name == 'output')].url"
+              "input.$": "$.presigned_urls.results[?(@.name == 'input')].url",
+              "output.$": "$.presigned_urls.results[?(@.name == 'output')].url"
             },
-            "ResultPath": "$",
-            "Next": "RunPodSubmit"
+            "ResultPath": "$.presigned_urls",
+            "Next": "UpscaleOne_RunPod"
           },
 
-          "RunPodSubmit": {
+          "UpscaleOne_RunPod": {
             "Type": "Task",
-            "Resource": "arn:aws:states:::http:invoke",
+            "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
             "Parameters": {
-              "ApiEndpoint.$": "$.runpod.run_endpoint",
-              "Method": "POST",
-              "InvocationConfig": {
-                "ConnectionArn": "${RUNPOD_CONNECTION_ARN}"
-              },
-              "RequestBody": {
-                "input": {
-                  "input_presigned_url.$": "$.input_presigned_url[0]",
-                  "output_presigned_url.$": "$.output_presigned_url[0]",
-                  "params": {
-                    "debug.$": "$.upscale.debug",
-                    "model.$": "$.upscale.model",
-                    "resolution.$": "$.upscale.resolution",
-                    "batch_size_strategy.$": "$.upscale.batch_size_strategy",
-                    "batch_size_quality.$": "$.recommendations.batch_size_quality",
-                    "chunk_size_strategy.$": "$.upscale.chunk_size_strategy",
-                    "chunk_size_recommended.$": "$.recommendations.chunk_size",
-                    "attention_mode.$": "$.upscale.attention_mode",
-                    "temporal_overlap.$": "$.upscale.temporal_overlap",
-                    "log_level": "DEBUG"
-                  }
-                }
+              "FunctionName": "${SUBMIT_RUNPOD_JOB_LAMBDA_ARN}",
+              "Payload": {
+                "taskToken.$": "$$.Task.Token",
+
+                "exec_id.$": "$.exec_id",
+                "segment.$": "$.segment",
+
+                "input_presigned_url.$": "$.presigned_urls.input[0]",
+                "output_presigned_url.$": "$.presigned_urls.output[0]",
+
+                "runpod.$": "$.runpod",
+                "upscale.$": "$.upscale",
+                "recommendations.$": "$.recommendations"
               }
             },
-            "ResultPath": "$.runpod_submit",
-            "Next": "InitPoll"
-          },
-
-          "InitPoll": {
-            "Type": "Pass",
-            "Parameters": {
-              "poll_count": 0,
-              "job_id.$": "$.runpod_submit.ResponseBody.id"
-            },
-            "ResultPath": "$.poll",
-            "Next": "WaitBeforePoll"
-          },
-
-          "WaitBeforePoll": {
-            "Type": "Wait",
-            "SecondsPath": "$.runpod.poll_seconds",
-            "Next": "RunPodStatus"
-          },
-
-          "RunPodStatus": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::http:invoke",
-            "Parameters": { 
-              "ApiEndpoint.$": "States.Format('{}/{}', $.runpod.status_endpoint_prefix, $.poll.job_id)",
-              "Method": "GET",
-              "InvocationConfig": {
-                "ConnectionArn": "${RUNPOD_CONNECTION_ARN}"
-              }
-            },
-            "ResultPath": "$.runpod_status",
-            "Next": "CheckRunPod"
-          },
-
-          "CheckRunPod": {
-            "Type": "Choice",
-            "Choices": [
+            "TimeoutSeconds": 14400,
+            "Retry": [
               {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "COMPLETED",
-                "Next": "Done"
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 2,
+                "BackoffRate": 2
               },
               {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "FAILED",
-                "Next": "Fail"
-              },
-              {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "CANCELLED",
-                "Next": "Cancelled"
-              },
-              {
-                "Variable": "$.runpod_status.ResponseBody.status",
-                "StringEquals": "TIMED_OUT",
-                "Next": "RunPodJobTimeout"
-              },
-              {
-                "Variable": "$.poll.poll_count",
-                "NumericGreaterThanEqualsPath": "$.runpod.max_polls",
-                "Next": "Timeout"
+                "ErrorEquals": ["RunPodJobFailed"],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 2,
+                "BackoffRate": 2.0
               }
             ],
-            "Default": "IncrementPoll"
-          },
-
-          "IncrementPoll": {
-            "Type": "Pass",
-            "Parameters": {
-              "poll_count.$": "States.MathAdd($.poll.poll_count, 1)",
-              "job_id.$": "$.poll.job_id"
-            },
-            "ResultPath": "$.poll",
-            "Next": "WaitBeforePoll"
-          },
-
-          "Done": { "Type": "Succeed" },
-          "Fail": { "Type": "Fail", "Error": "RunPodFailed", "Cause": "RunPod job returned FAILED" },
-          "Cancelled": { "Type": "Fail", "Error": "RunPodCancelled", "Cause": "RunPod job returned CANCELLED" },
-          "RunPodJobTimeout": { "Type": "Fail", "Error": "RunPodJobTimeout", "Cause": "RunPod job returned TIMED_OUT" },
-          "Timeout": { "Type": "Fail", "Error": "RunPodTimeout", "Cause": "RunPod polling exceeded max_polls" }
-
+            "End": true
+          }
         }
       },
       "ResultPath": "$.upscale_results",
       "Next": "CombineSegments"
     },
+    
     "CombineSegments": {
       "Type": "Task",
       "Resource": "arn:aws:states:::batch:submitJob.sync",

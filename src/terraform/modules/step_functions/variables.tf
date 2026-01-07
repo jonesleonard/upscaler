@@ -70,6 +70,11 @@ variable "presign_s3_urls_lambda_function_arn" {
   type        = string
 }
 
+variable "submit_runpod_job_lambda_function_arn" {
+  description = "The ARN of the Lambda function used to submit RunPod jobs."
+  type        = string
+}
+
 ################################################################################
 # RunPod Configuration
 ################################################################################

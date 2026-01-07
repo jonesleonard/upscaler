@@ -67,7 +67,8 @@ module "upscale_video_state_machine" {
     COMBINE_JOB_DEFINITION_ARN = var.upscale_video_combine_job_definition_arn
 
     # Lambda Functions
-    PRESIGN_SEGMENT_LAMBDA_ARN = var.presign_s3_urls_lambda_function_arn
+    PRESIGN_SEGMENT_LAMBDA_ARN   = var.presign_s3_urls_lambda_function_arn
+    SUBMIT_RUNPOD_JOB_LAMBDA_ARN = var.submit_runpod_job_lambda_function_arn
 
     # RunPod Configuration
     RUNPOD_CONNECTION_ARN         = var.runpod_connection_arn
@@ -87,7 +88,10 @@ module "upscale_video_state_machine" {
     }
 
     lambda = {
-      lambda = [var.presign_s3_urls_lambda_function_arn]
+      lambda = [
+        var.presign_s3_urls_lambda_function_arn,
+        var.submit_runpod_job_lambda_function_arn
+      ]
     }
   }
 

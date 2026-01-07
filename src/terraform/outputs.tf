@@ -303,3 +303,56 @@ output "lambda_presign_urls_function_name" {
   description = "The name of the Presign URLs Lambda function."
   value       = module.lambda.presign_model_urls_lambda_function_name
 }
+
+output "lambda_runpod_webhook_handler_function_arn" {
+  description = "The ARN of the RunPod Webhook Handler Lambda function."
+  value       = module.lambda.runpod_webhook_handler_lambda_function_arn
+}
+
+output "lambda_runpod_webhook_handler_function_name" {
+  description = "The name of the RunPod Webhook Handler Lambda function."
+  value       = module.lambda.runpod_webhook_handler_lambda_function_name
+}
+
+output "lambda_submit_runpod_job_function_arn" {
+  description = "The ARN of the Submit RunPod Job Lambda function."
+  value       = module.lambda.submit_runpod_job_lambda_function_arn
+}
+
+output "lambda_submit_runpod_job_function_name" {
+  description = "The name of the Submit RunPod Job Lambda function."
+  value       = module.lambda.submit_runpod_job_lambda_function_name
+}
+
+################################################################################
+# API Gateway Outputs
+################################################################################
+
+output "api_gateway_runpod_webhook_handler_arn" {
+  description = "The ARN of the RunPod Webhook Handler API Gateway."
+  value       = module.api_gateway.runpod_webhook_handler_api_gateway_arn
+}
+
+output "api_gateway_runpod_webhook_handler_endpoint" {
+  description = "The endpoint URL of the RunPod Webhook Handler API Gateway."
+  value       = module.api_gateway.runpod_webhook_handler_api_gateway_endpoint
+}
+
+output "api_gateway_runpod_webhook_handler_name" {
+  description = "The name of the RunPod Webhook Handler API Gateway."
+  value       = module.api_gateway.runpod_webhook_handler_api_gateway_name
+}
+
+################################################################################
+# DynamoDB Outputs
+################################################################################
+
+output "dynamodb_runpod_callbacks_table_arn" {
+  description = "The ARN of the RunPod Callbacks DynamoDB table."
+  value       = module.dynamodb.runpod_callbacks_table_arn
+}
+
+output "dynamodb_runpod_callbacks_table_name" {
+  description = "The name of the RunPod Callbacks DynamoDB table."
+  value       = module.dynamodb.runpod_callbacks_table_name
+}

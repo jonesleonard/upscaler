@@ -20,10 +20,34 @@ variable "tags" {
 }
 
 ################################################################################
-# Presign Upscale Video S3 URLs Lambda Configuration
+# Lambda - Presign Upscale Video S3 URLs Configuration
 ################################################################################
 
 variable "upscale_video_bucket_arn" {
   description = "The ARN of the Upscale Video S3 Bucket."
+  type        = string
+}
+
+################################################################################
+# Lambda - RunPod Webhook Handler Configuration
+################################################################################
+
+variable "runpod_callbacks_dynamodb_table_arn" {
+  description = "The ARN of the RunPod Callbacks DynamoDB Table."
+  type        = string
+}
+
+################################################################################
+# Lambda - Submit RunPod Job Configuration
+################################################################################
+
+variable "runpod_api_key_secret_arn" {
+  description = "The ARN of the Secrets Manager secret containing RunPod API credentials."
+  type        = string
+  sensitive   = true
+}
+
+variable "runpod_webhook_handler_api_gateway_execution_arn" {
+  description = "The API Gateway Execution ARN of the API Gateway that manages the RunPod API connections"
   type        = string
 }
