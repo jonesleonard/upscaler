@@ -84,6 +84,64 @@ validate_requirements() {
         exit 1
     fi
     
+    # Validate 10-bit encoding requirements
+    if [[ "${TEN_BIT:-false}" == "true" ]]; then
+        if [[ "${VIDEO_BACKEND:-opencv}" != "ffmpeg" ]]; then
+            log_error "10-bit encoding requires VIDEO_BACKEND=ffmpeg"
+            log_error "Current VIDEO_BACKEND: ${VIDEO_BACKEND:-opencv}"
+            log_error "Please set VIDEO_BACKEND=ffmpeg when using TEN_BIT=true"
+            exit 1
+        fi
+        
+        # Verify ffmpeg is available on PATH
+        if ! command -v ffmpeg &> /dev/null; then
+            log_error "10-bit encoding requires ffmpeg but ffmpeg is not available on PATH"
+            log_error "Please install ffmpeg or disable TEN_BIT"
+            exit 1
+        fi
+        
+        log_info "10-bit encoding validated (VIDEO_BACKEND=ffmpeg, ffmpeg available)"
+    fi
+    
+    # Validate torch.compile requirements
+    if [[ "${COMPILE_DIT:-false}" == "true" || "${COMPILE_VAE:-false}" == "true" ]]; then
+        # Check PyTorch version
+        local pytorch_version
+        pytorch_version=$(python3 -c "import torch; print(torch.__version__)" 2>/dev/null || echo "unknown")
+        if [[ "$pytorch_version" == "unknown" ]]; then
+            log_error "torch.compile requires PyTorch but PyTorch is not installed"
+            exit 1
+        fi
+        
+        # Check PyTorch version is >= 2.0
+        local major_version
+        major_version=$(echo "$pytorch_version" | cut -d. -f1)
+        if [[ "$major_version" -lt 2 ]]; then
+            log_error "torch.compile requires PyTorch >= 2.0"
+            log_error "Current PyTorch version: $pytorch_version"
+            log_error "Please upgrade PyTorch or disable COMPILE_DIT and COMPILE_VAE"
+            exit 1
+        fi
+        
+        # Check torch.compile is available
+        if ! python3 -c "import torch; assert hasattr(torch, 'compile')" 2>/dev/null; then
+            log_error "torch.compile is not available in PyTorch $pytorch_version"
+            log_error "Please upgrade PyTorch or disable COMPILE_DIT and COMPILE_VAE"
+            exit 1
+        fi
+        
+        # Check Triton is available
+        if ! python3 -c "import triton" 2>/dev/null; then
+            log_error "torch.compile requires Triton but Triton is not installed"
+            log_error "Please install Triton or disable COMPILE_DIT and COMPILE_VAE"
+            exit 1
+        fi
+        
+        local triton_version
+        triton_version=$(python3 -c "import triton; print(triton.__version__)" 2>/dev/null || echo "unknown")
+        log_info "torch.compile validated (PyTorch $pytorch_version, Triton $triton_version)"
+    fi
+    
     log_info "All requirements validated"
 }
 
@@ -100,6 +158,10 @@ main() {
     readonly VAE_DECODE_TILED="${VAE_DECODE_TILED:-}"
     readonly CACHE_DIT="${CACHE_DIT:-}"
     readonly CACHE_VAE="${CACHE_VAE:-}"
+    readonly VIDEO_BACKEND="${VIDEO_BACKEND:-opencv}"
+    readonly TEN_BIT="${TEN_BIT:-false}"
+    readonly COMPILE_DIT="${COMPILE_DIT:-false}"
+    readonly COMPILE_VAE="${COMPILE_VAE:-false}"
     
     # Batch size strategy: "conservative", "quality", or "explicit"
     readonly BATCH_SIZE_STRATEGY="${BATCH_SIZE_STRATEGY:-explicit}"
@@ -183,6 +245,10 @@ main() {
     [[ -n "$VAE_DECODE_TILED" ]] && log_info "  VAE_DECODE_TILED: $VAE_DECODE_TILED"
     [[ -n "$CACHE_DIT" ]] && log_info "  CACHE_DIT: $CACHE_DIT"
     [[ -n "$CACHE_VAE" ]] && log_info "  CACHE_VAE: $CACHE_VAE"
+    log_info "  VIDEO_BACKEND: $VIDEO_BACKEND"
+    [[ "$TEN_BIT" == "true" ]] && log_info "  TEN_BIT: $TEN_BIT"
+    [[ "$COMPILE_DIT" == "true" ]] && log_info "  COMPILE_DIT: $COMPILE_DIT"
+    [[ "$COMPILE_VAE" == "true" ]] && log_info "  COMPILE_VAE: $COMPILE_VAE"
     echo "============================================================================"
     
     validate_requirements
@@ -286,6 +352,10 @@ main() {
     [[ "$VAE_DECODE_TILED" == "true" ]] && inference_cmd+=(--vae_decode_tiled)
     [[ "$CACHE_DIT" == "true" ]] && inference_cmd+=(--cache_dit)
     [[ "$CACHE_VAE" == "true" ]] && inference_cmd+=(--cache_vae)
+    [[ -n "$VIDEO_BACKEND" ]] && inference_cmd+=(--video_backend "$VIDEO_BACKEND")
+    [[ "$TEN_BIT" == "true" ]] && inference_cmd+=(--10bit)
+    [[ "$COMPILE_DIT" == "true" ]] && inference_cmd+=(--compile_dit)
+    [[ "$COMPILE_VAE" == "true" ]] && inference_cmd+=(--compile_vae)
     
     if ! "${inference_cmd[@]}"; then
         log_error "SeedVR2 upscaling failed"

@@ -229,6 +229,10 @@ def upscale_segment(job: Dict[str, Any]) -> Dict[str, Any]:
             "vae_decode_tiled": "VAE_DECODE_TILED",
             "cache_dit": "CACHE_DIT",
             "cache_vae": "CACHE_VAE",
+            "video_backend": "VIDEO_BACKEND",
+            "ten_bit": "TEN_BIT",
+            "compile_dit": "COMPILE_DIT",
+            "compile_vae": "COMPILE_VAE",
         }
         
         for param_key, env_var in param_mapping.items():
