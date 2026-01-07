@@ -262,21 +262,6 @@ output "batch_combine_job_queue_name" {
 }
 
 ################################################################################
-# EventBridge Outputs
-################################################################################
-
-output "eventbridge_runpod_connection_arn" {
-  description = "The ARN of the RunPod EventBridge connection."
-  value       = module.eventbridge.runpod_connection_arn
-  sensitive   = true
-}
-
-output "eventbridge_runpod_connection_name" {
-  description = "The name of the RunPod EventBridge connection."
-  value       = module.eventbridge.runpod_connection_name
-}
-
-################################################################################
 # Step Functions Outputs
 ################################################################################
 

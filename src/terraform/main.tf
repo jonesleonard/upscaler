@@ -163,24 +163,11 @@ module "dynamodb" {
 ################################################################################
 
 module "secrets_manager" {
-  source       = "./modules/secrets_manager"
-  environment  = var.environment
-  project_name = var.project_name
-  tags         = local.tags
-}
-
-################################################################################
-# EventBridge (RunPod Connection)
-################################################################################
-
-module "eventbridge" {
-  source       = "./modules/eventbridge"
-  environment  = var.environment
-  project_name = var.project_name
-  tags         = local.tags
-
-  # RunPod Configuration
+  source         = "./modules/secrets_manager"
+  environment    = var.environment
+  project_name   = var.project_name
   runpod_api_key = var.runpod_api_key
+  tags           = local.tags
 }
 
 ################################################################################
@@ -213,10 +200,7 @@ module "step_functions" {
   submit_runpod_job_lambda_function_arn = module.lambda.submit_runpod_job_lambda_function_arn
 
   # RunPod Configuration
-  runpod_base_api_endpoint = var.runpod_base_api_endpoint
-  runpod_endpoint_id       = var.runpod_endpoint_id
-  runpod_connection_arn    = module.eventbridge.runpod_connection_arn
-  runpod_max_concurrency   = var.runpod_max_concurrency
+  runpod_max_concurrency = var.runpod_max_concurrency
 }
 
 ################################################################################

@@ -98,7 +98,6 @@ def get_runpod_api_key() -> str:
         raise RuntimeError(f"Failed to retrieve RunPod API key: {e}")
 
 
-
 def generate_callback_token() -> str:
     """
     Generate a secure random callback token.
@@ -221,15 +220,20 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     
     Expected input from Step Functions:
     {
-        "task_token": "$$.Task.Token",
         "exec_id": "execution-id",
-        "segment": {
-            "filename": "seg_0001.mp4"
-        },
+        "task_token": "$$.Task.Token",
         "input_presigned_url": "https://s3.../seg_0001.mp4?...",
         "output_presigned_url": "https://s3.../seg_0001.mp4?...",
-        "params": {
-            "model": "7b",
+        "segment": {
+            "index": 0,
+            "filename": "seg_0000.mp4",
+            "s3_uri": "s3://bucket/runs/1234/raw/seg_0000.mp4"
+        },
+        "runpod": {
+            "run_endpoint": "https://api.runpod.ai/v2/1234/run",
+        },
+        "upscale": {
+            "model": "seedvr2_ema_7b_fp16",
             "resolution": 1080,
             "batch_size_strategy": "quality",
             ...

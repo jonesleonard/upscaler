@@ -16,6 +16,7 @@ module "runpod_api_key_secret" {
   name_prefix             = local.runpod_api_key_secret
   description             = "Secret for RunPod API Key used by Submit RunPod Job Lambda"
   recovery_window_in_days = 30
+  secret_string           = var.runpod_api_key
 
   # Policy
   create_policy       = true

@@ -79,21 +79,6 @@ variable "submit_runpod_job_lambda_function_arn" {
 # RunPod Configuration
 ################################################################################
 
-variable "runpod_base_api_endpoint" {
-  description = "The base API endpoint for RunPod."
-  type        = string
-}
-
-variable "runpod_endpoint_id" {
-  description = "The ID of the RunPod endpoint."
-  type        = string
-}
-
-variable "runpod_connection_arn" {
-  description = "The ARN for the RunPod connection."
-  type        = string
-}
-
 variable "runpod_max_concurrency" {
   description = "The maximum concurrency for the task that submits jobs to the RunPod Endpoint."
   type        = number

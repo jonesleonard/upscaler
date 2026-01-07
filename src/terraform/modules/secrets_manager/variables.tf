@@ -18,3 +18,13 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+################################################################################
+# RunPod - Secrets Manager Configuration
+################################################################################
+
+variable "runpod_api_key" {
+  description = "The RunPod API key used to authenticate requests to the RunPod API."
+  type        = string
+  sensitive   = true
+}
