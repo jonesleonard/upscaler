@@ -224,13 +224,6 @@ variable "runpod_api_key" {
   default     = ""
 }
 
-variable "runpod_api_key_secret_arn" {
-  description = "The ARN of the Secrets Manager secret containing the RunPod API key. Required for the submit_runpod_job Lambda."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
 variable "runpod_base_api_endpoint" {
   description = "The base API endpoint for RunPod (e.g., https://api.runpod.ai/v2)."
   type        = string

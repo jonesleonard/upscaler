@@ -194,6 +194,7 @@ module "submit_runpod_job_lambda" {
     {
       effect = "Allow",
       actions = [
+        "secretsmanager:DescribeSecret",
         "secretsmanager:GetSecretValue"
       ],
       resources = [

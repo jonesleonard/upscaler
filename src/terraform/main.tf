@@ -159,6 +159,17 @@ module "dynamodb" {
 }
 
 ################################################################################
+# Secrets Manager
+################################################################################
+
+module "secrets_manager" {
+  source       = "./modules/secrets_manager"
+  environment  = var.environment
+  project_name = var.project_name
+  tags         = local.tags
+}
+
+################################################################################
 # EventBridge (RunPod Connection)
 ################################################################################
 
@@ -227,8 +238,8 @@ module "lambda" {
   # API Gateway
   runpod_webhook_handler_api_gateway_execution_arn = module.api_gateway.runpod_webhook_handler_api_gateway_execution_arn
 
-  # RunPod Configuration
-  runpod_api_key_secret_arn = var.runpod_api_key_secret_arn
+  # Secrets Manager
+  runpod_api_key_secret_arn = module.secrets_manager.runpod_api_key_secret_arn
 }
 
 ################################################################################

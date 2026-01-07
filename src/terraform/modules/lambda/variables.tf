@@ -37,6 +37,11 @@ variable "runpod_callbacks_dynamodb_table_arn" {
   type        = string
 }
 
+variable "runpod_webhook_handler_api_gateway_execution_arn" {
+  description = "The API Gateway Execution ARN of the API Gateway that manages the RunPod API connections"
+  type        = string
+}
+
 ################################################################################
 # Lambda - Submit RunPod Job Configuration
 ################################################################################
@@ -45,9 +50,4 @@ variable "runpod_api_key_secret_arn" {
   description = "The ARN of the Secrets Manager secret containing RunPod API credentials."
   type        = string
   sensitive   = true
-}
-
-variable "runpod_webhook_handler_api_gateway_execution_arn" {
-  description = "The API Gateway Execution ARN of the API Gateway that manages the RunPod API connections"
-  type        = string
 }

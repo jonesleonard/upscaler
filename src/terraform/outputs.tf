@@ -356,3 +356,18 @@ output "dynamodb_runpod_callbacks_table_name" {
   description = "The name of the RunPod Callbacks DynamoDB table."
   value       = module.dynamodb.runpod_callbacks_table_name
 }
+
+################################################################################
+# Secrets Manager Outputs
+################################################################################
+
+output "secrets_manager_runpod_api_key_secret_arn" {
+  description = "The ARN of the RunPod API Key secret."
+  value       = module.secrets_manager.runpod_api_key_secret_arn
+  sensitive   = true
+}
+
+output "secrets_manager_runpod_api_key_secret_name" {
+  description = "The name of the RunPod API Key secret."
+  value       = module.secrets_manager.runpod_api_key_secret_name
+}
