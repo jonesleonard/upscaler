@@ -20,6 +20,20 @@ variable "tags" {
 }
 
 ################################################################################
+# Lambda - Shared Configuration
+################################################################################
+
+variable "runpod_callbacks_table_name" {
+  description = "The name of the DynamoDB table used for storing RunPod callback information."
+  type        = string
+}
+
+variable "runpod_callbacks_dynamodb_table_arn" {
+  description = "The ARN of the RunPod Callbacks DynamoDB Table."
+  type        = string
+}
+
+################################################################################
 # Lambda - Presign Upscale Video S3 URLs Configuration
 ################################################################################
 
@@ -32,11 +46,6 @@ variable "upscale_video_bucket_arn" {
 # Lambda - RunPod Webhook Handler Configuration
 ################################################################################
 
-variable "runpod_callbacks_dynamodb_table_arn" {
-  description = "The ARN of the RunPod Callbacks DynamoDB Table."
-  type        = string
-}
-
 variable "runpod_webhook_handler_api_gateway_execution_arn" {
   description = "The API Gateway Execution ARN of the API Gateway that manages the RunPod API connections"
   type        = string
@@ -48,6 +57,17 @@ variable "runpod_webhook_handler_api_gateway_execution_arn" {
 
 variable "runpod_api_key_secret_arn" {
   description = "The ARN of the Secrets Manager secret containing RunPod API credentials."
+  type        = string
+  sensitive   = true
+}
+
+variable "runpod_webhook_base_url" {
+  description = "The base URL for the RunPod webhook handler API Gateway."
+  type        = string
+}
+
+variable "runpod_api_key_secret_name" {
+  description = "The name of the Secrets Manager secret containing RunPod API credentials."
   type        = string
   sensitive   = true
 }

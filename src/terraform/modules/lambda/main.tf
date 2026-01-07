@@ -98,6 +98,10 @@ module "runpod_webhook_handler_lambda" {
 
   source_path = "${path.module}/../../../lambdas/runpod_webhook_handler"
 
+  environment_variables = {
+    CALLBACK_TABLE_NAME = var.runpod_callbacks_table_name
+  }
+
   # Packaging configuration
   artifacts_dir = "${path.root}/lambda_builds"
   hash_extra    = "runpod_webhook_handler"
@@ -169,6 +173,12 @@ module "submit_runpod_job_lambda" {
 
   source_path = "${path.module}/../../../lambdas/submit_runpod_job"
 
+  environment_variables = {
+    CALLBACK_TABLE_NAME        = var.runpod_callbacks_table_name
+    WEBHOOK_BASE_URL           = var.runpod_webhook_base_url
+    RUNPOD_API_KEY_SECRET_NAME = var.runpod_api_key_secret_name
+  }
+
   # Packaging configuration
   artifacts_dir = "${path.root}/lambda_builds"
   hash_extra    = "submit_runpod_job"
@@ -199,6 +209,16 @@ module "submit_runpod_job_lambda" {
       ],
       resources = [
         var.runpod_api_key_secret_arn
+      ]
+    },
+    {
+      effect = "Allow",
+      actions = [
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem"
+      ],
+      resources = [
+        var.runpod_callbacks_dynamodb_table_arn
       ]
     }
   ]

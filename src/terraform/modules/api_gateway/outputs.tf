@@ -26,3 +26,8 @@ output "runpod_webhook_handler_api_gateway_name" {
   description = "The name of the RunPod Webhook Handler API Gateway."
   value       = local.runpod_webhook_handler_api_gateway_name
 }
+
+output "runpod_webhook_handler_webhook_base_url" {
+  description = "The base URL for RunPod webhooks (includes path, append callback_token to this)."
+  value       = "${module.runpod_webhook_handler_api_gateway.api_endpoint}/runpod/webhook/"
+}

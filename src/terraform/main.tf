@@ -218,12 +218,15 @@ module "lambda" {
 
   # DynamoDB
   runpod_callbacks_dynamodb_table_arn = module.dynamodb.runpod_callbacks_table_arn
+  runpod_callbacks_table_name         = module.dynamodb.runpod_callbacks_table_name
 
   # API Gateway
   runpod_webhook_handler_api_gateway_execution_arn = module.api_gateway.runpod_webhook_handler_api_gateway_execution_arn
+  runpod_webhook_base_url                          = module.api_gateway.runpod_webhook_handler_webhook_base_url
 
   # Secrets Manager
-  runpod_api_key_secret_arn = module.secrets_manager.runpod_api_key_secret_arn
+  runpod_api_key_secret_arn  = module.secrets_manager.runpod_api_key_secret_arn
+  runpod_api_key_secret_name = module.secrets_manager.runpod_api_key_secret_name
 }
 
 ################################################################################

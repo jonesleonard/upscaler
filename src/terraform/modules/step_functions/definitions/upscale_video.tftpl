@@ -116,7 +116,7 @@
           "ParsePresignResponse": {
             "Type": "Pass",
             "Parameters": {
-              "results.$": "States.StringToJson($.io_presigns.Payload.body.results)"
+              "results.$": "States.StringToJson($.io_presigns.Payload.body)"
             },
             "ResultPath": "$.presigned_urls",
             "Next": "ExtractPresignedURLs"
