@@ -355,4 +355,5 @@ output "secrets_manager_runpod_api_key_secret_arn" {
 output "secrets_manager_runpod_api_key_secret_name" {
   description = "The name of the RunPod API Key secret."
   value       = module.secrets_manager.runpod_api_key_secret_name
+  sensitive   = true
 }
