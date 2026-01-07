@@ -23,7 +23,37 @@ variable "tags" {
 # API Gateway - RunPod Webhook Handler Configuration
 ################################################################################
 
-variable "runpod_webhook_handler_lambda_arn" {
-  description = "The ARN of the RunPod Webhook Handler Lambda."
+variable "runpod_webhook_handler_lambda_invoke_arn" {
+  description = "The invoke ARN of the RunPod Webhook Handler Lambda function (required for API Gateway integration)."
   type        = string
+}
+
+variable "cors_allowed_origins" {
+  description = "List of allowed origins for CORS configuration. Use ['*'] for development or specific domains for production."
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "stage_name" {
+  description = "The name of the API Gateway stage (e.g., 'prod', 'dev')."
+  type        = string
+  default     = "$default"
+}
+
+variable "enable_throttling" {
+  description = "Enable throttling for the API Gateway."
+  type        = bool
+  default     = false
+}
+
+variable "throttle_burst_limit" {
+  description = "The API throttling burst limit."
+  type        = number
+  default     = 5000
+}
+
+variable "throttle_rate_limit" {
+  description = "The API throttling rate limit."
+  type        = number
+  default     = 10000
 }

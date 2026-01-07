@@ -237,5 +237,5 @@ module "api_gateway" {
   tags         = local.tags
 
   # Lambda Configuration
-  runpod_webhook_handler_lambda_arn = module.lambda.runpod_webhook_handler_lambda_function_arn
+  runpod_webhook_handler_lambda_invoke_arn = module.lambda.runpod_webhook_handler_lambda_invoke_arn
 }

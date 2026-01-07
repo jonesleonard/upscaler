@@ -14,10 +14,16 @@ module "runpod_webhook_handler_api_gateway" {
   description   = "API Gateway for ${var.project_name} in ${var.environment} environment"
   protocol_type = "HTTP"
 
+  create_domain_name = false
+
+  # Stage configuration
+  stage_name = var.environment
+
+  # CORS Configuration
   cors_configuration = {
     allow_headers = ["content-type", "x-amz-date", "authorization", "x-api-key", "x-amz-security-token", "x-amz-user-agent"]
     allow_methods = ["*"]
-    allow_origins = ["*"]
+    allow_origins = var.cors_allowed_origins
   }
 
   # Access logs
@@ -56,8 +62,10 @@ module "runpod_webhook_handler_api_gateway" {
       integration = {
         description            = "Integration for RunPod Webhook Handler Lambda"
         type                   = "AWS_PROXY"
-        uri                    = var.runpod_webhook_handler_lambda_arn
+        uri                    = var.runpod_webhook_handler_lambda_invoke_arn
         payload_format_version = "2.0"
+        throttling_rate_limit  = var.throttle_rate_limit
+        throttling_burst_limit = var.throttle_burst_limit
       }
     }
   }
