@@ -32,7 +32,6 @@ secretsmanager_client = boto3.client("secretsmanager")
 CALLBACK_TABLE_NAME = os.environ["CALLBACK_TABLE_NAME"]
 WEBHOOK_BASE_URL = os.environ["WEBHOOK_BASE_URL"]
 RUNPOD_API_KEY_SECRET_NAME = os.environ["RUNPOD_API_KEY_SECRET_NAME"]
-RUNPOD_ENDPOINT_URL = os.environ["RUNPOD_ENDPOINT_URL"]
 
 table = dynamodb.Table(CALLBACK_TABLE_NAME)
 
@@ -112,6 +111,7 @@ def submit_runpod_job(
     input_url: str,
     output_url: str,
     webhook_url: str,
+    rundpod_endpoint_url: str,
     params: dict[str, Any]
 ) -> str:
     """
@@ -121,6 +121,7 @@ def submit_runpod_job(
         input_url: Presigned S3 URL for input
         output_url: Presigned S3 URL for output
         webhook_url: Webhook callback URL
+        rundpod_endpoint_url: RunPod job submission endpoint
         params: Upscale parameters (model, resolution, etc.)
         
     Returns:
@@ -128,7 +129,7 @@ def submit_runpod_job(
     """
     import requests
     
-    logger.info(f"Submitting job to RunPod endpoint: {RUNPOD_ENDPOINT_URL}")
+    logger.info(f"Submitting job to RunPod endpoint: {rundpod_endpoint_url}")
     
     payload = {
         "input": {
@@ -146,7 +147,7 @@ def submit_runpod_job(
     
     try:
         response = requests.post(
-            RUNPOD_ENDPOINT_URL,
+            rundpod_endpoint_url,
             json=payload,
             headers=headers,
             timeout=30
@@ -270,6 +271,10 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         if not input_presigned_url or not output_presigned_url:
             raise ValueError("Missing required fields: input_presigned_url, output_presigned_url")
         
+        runpod_endpoint_url = event.get("runpod", {}).get("run_endpoint")
+        if not runpod_endpoint_url:
+            raise ValueError("Missing required field: runpod.run_endpoint")
+        
         params = event.get("params", {})
         
         # 1. Generate callback token
@@ -285,6 +290,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             input_url=input_presigned_url,
             output_url=output_presigned_url,
             webhook_url=webhook_url,
+            rundpod_endpoint_url=runpod_endpoint_url,
             params=params
         )
         

@@ -33,9 +33,10 @@ logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 sfn_client = boto3.client("stepfunctions")
 dynamodb = boto3.resource("dynamodb")
 
-# Get table name from environment
-TABLE_NAME = os.environ["CALLBACK_TABLE_NAME"]
-table = dynamodb.Table(TABLE_NAME)
+# Environment variables
+CALLBACK_TABLE_NAME = os.environ["CALLBACK_TABLE_NAME"]
+
+table = dynamodb.Table(CALLBACK_TABLE_NAME)
 
 
 def get_callback_record(callback_token: str) -> Optional[dict[str, Any]]:
