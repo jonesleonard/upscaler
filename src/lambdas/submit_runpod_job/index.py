@@ -137,7 +137,7 @@ def submit_runpod_job(
             "output_presigned_url": output_url,
             "params": params
         },
-        "webhook": webhook_url
+        "webhookV2": webhook_url
     }
     
     headers = {

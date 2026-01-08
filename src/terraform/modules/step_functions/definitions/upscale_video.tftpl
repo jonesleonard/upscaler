@@ -144,7 +144,7 @@
                 "output_presigned_url.$": "$.presigned_urls.output[0]",
                 "runpod.$": "$.runpod",
                 "segment.$": "$.segment",
-                "params.$": "$.params"
+                "params.$": "States.JsonMerge($.params, $.recommendations, false)"
               }
             },
             "TimeoutSeconds": 14400,
