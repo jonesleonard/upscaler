@@ -140,6 +140,7 @@ module "runpod_webhook_handler_lambda" {
       effect = "Allow",
       actions = [
         "dynamodb:GetItem",
+        "dynamodb:PutItem",
         "dynamodb:UpdateItem"
       ],
       resources = [
@@ -215,6 +216,7 @@ module "submit_runpod_job_lambda" {
       effect = "Allow",
       actions = [
         "dynamodb:GetItem",
+        "dynamodb:PutItem",
         "dynamodb:UpdateItem"
       ],
       resources = [

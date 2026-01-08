@@ -125,8 +125,8 @@
           "ExtractPresignedURLs": {
             "Type": "Pass",
             "Parameters": {
-              "input.$": "$.presigned_urls.results[?(@.name == 'input')].url",
-              "output.$": "$.presigned_urls.results[?(@.name == 'output')].url"
+              "input.$": "$.presigned_urls.results.results[?(@.name == 'input')].url",
+              "output.$": "$.presigned_urls.results.results[?(@.name == 'output')].url"
             },
             "ResultPath": "$.presigned_urls",
             "Next": "UpscaleOne_RunPod"
