@@ -439,7 +439,7 @@ def analyze_video(
             "batch_size_candidates": batch_candidates,
             "batch_size_conservative": stat_batch_cons,
             "batch_size_quality": stat_batch_qual,
-            "chunk_size": chunk_rec,
+            "chunk_size_recommended": chunk_rec,
             "chunk_size_fallback": chunk_fallback
         }
     }
