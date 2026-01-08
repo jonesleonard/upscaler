@@ -94,7 +94,7 @@ def update_callback_completed(
         logger.error(f"Error updating callback record: {e}")
         raise
 
-def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """
     Handle RunPod webhook callback.
     
