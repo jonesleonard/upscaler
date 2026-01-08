@@ -10,7 +10,9 @@
         "exec_id.$": "$$.Execution.StartTime",
         "splitter": {
           "chunk_seconds": 300,
-          "use_stream_copy": true
+          "use_stream_copy": false,
+          "retry_with_reencode": true,
+          "v_crf": 18
         }
       }
     },
@@ -35,9 +37,12 @@
             { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
             { "Name": "INPUT_S3_URI", "Value.$": "$.input_s3_uri" },
             { "Name": "CHUNK_SECONDS", "Value.$": "States.JsonToString($.splitter.chunk_seconds)" },
+            { "Name": "SEGMENT_COUNT", "Value.$": "States.JsonToString($.splitter.segment_count)" },
             { "Name": "MANIFEST_KEY", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/manifest.json', $.exec_id)" },
             { "Name": "OUTPUT_S3_PREFIX", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}', $.exec_id)" },
-            { "Name": "USE_STREAM_COPY", "Value.$": "States.JsonToString($.splitter.use_stream_copy)" }
+            { "Name": "USE_STREAM_COPY", "Value.$": "States.JsonToString($.splitter.use_stream_copy)" },
+            { "Name": "RETRY_WITH_REENCODE", "Value.$": "States.JsonToString($.splitter.retry_with_reencode)" },
+            { "Name": "V_CRF", "Value.$": "States.JsonToString($.splitter.v_crf)" }
           ]
         }
       },
