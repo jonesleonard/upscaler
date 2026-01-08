@@ -28,6 +28,6 @@ output "runpod_webhook_handler_api_gateway_name" {
 }
 
 output "runpod_webhook_handler_webhook_base_url" {
-  description = "The base URL for RunPod webhooks (includes path, append callback_token to this)."
-  value       = "${module.runpod_webhook_handler_api_gateway.api_endpoint}/runpod/webhook/"
+  description = "The base URL for RunPod webhooks (includes stage and path, append callback_token to this)."
+  value       = "${module.runpod_webhook_handler_api_gateway.stage_invoke_url}/runpod/webhook/"
 }
