@@ -95,7 +95,7 @@ def validate_chunk_seconds(chunk_seconds: float) -> None:
 
 def create_manifest(
     output_dir: str,
-    chunk_seconds: float,
+    chunk_seconds: Optional[float],
     s3_prefix: str,
     shot_guidance: Optional[Dict[str, Any]] = None,
     output_file: str = MANIFEST_FILENAME
@@ -105,7 +105,7 @@ def create_manifest(
 
     Parameters:
         output_dir: Directory containing the segment files
-        chunk_seconds: Duration of each chunk in seconds
+        chunk_seconds: Duration of each chunk in seconds (None if using segment count mode)
         s3_prefix: S3 prefix where segments are uploaded
         shot_guidance: Optional shot guidance metadata from shot_guidance.py
         output_file: Name of the manifest file to create
@@ -119,7 +119,8 @@ def create_manifest(
     """
     # Validate inputs
     validate_output_dir(output_dir)
-    validate_chunk_seconds(chunk_seconds)
+    if chunk_seconds is not None:
+        validate_chunk_seconds(chunk_seconds)
     validate_s3_uri(s3_prefix, "s3_prefix")
 
     # Find all segment files and sort them
@@ -172,12 +173,27 @@ def main() -> None:
     s3_output_prefix = os.environ.get("OUTPUT_S3_PREFIX", "")
     shot_guidance_json = os.environ.get("SHOT_GUIDANCE_JSON", "")
 
-    # Parse chunk seconds with error handling
-    try:
-        chunk_sec = float(os.environ.get("CHUNK_SECONDS", str(DEFAULT_CHUNK_SECONDS)))
-    except ValueError:
-        logger.error("CHUNK_SECONDS must be a valid number")
-        sys.exit(1)
+    # Parse chunk seconds or segment count with error handling
+    segment_count_str = os.environ.get("SEGMENT_COUNT", "")
+    chunk_seconds_str = os.environ.get("CHUNK_SECONDS", "")
+
+    # If SEGMENT_COUNT is set, use None for chunk_sec (will be calculated later)
+    # Otherwise use CHUNK_SECONDS or default
+    if segment_count_str:
+        chunk_sec = None  # Will be stored as null in manifest when using segment count
+        try:
+            segment_count = int(segment_count_str)
+            if segment_count <= 0:
+                raise ValueError("SEGMENT_COUNT must be positive")
+        except ValueError:
+            logger.error("SEGMENT_COUNT must be a valid positive integer")
+            sys.exit(1)
+    else:
+        try:
+            chunk_sec = float(chunk_seconds_str) if chunk_seconds_str else DEFAULT_CHUNK_SECONDS
+        except ValueError:
+            logger.error("CHUNK_SECONDS must be a valid number")
+            sys.exit(1)
 
     # Validate required environment variables
     if not s3_output_prefix:

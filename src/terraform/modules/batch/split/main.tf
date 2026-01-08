@@ -87,6 +87,22 @@ module "batch_split" {
         executionRoleArn = var.ecs_task_execution_role_arn
         jobRoleArn       = var.job_split_role_arn
 
+        # Environment variables for hybrid splitting mode
+        environment = [
+          {
+            name  = "USE_STREAM_COPY"
+            value = "false" # Default to re-encode for precise boundaries
+          },
+          {
+            name  = "RETRY_WITH_REENCODE"
+            value = "true" # Enable hybrid mode: try stream copy first, fallback to re-encode
+          },
+          {
+            name  = "V_CRF"
+            value = "18" # High quality CRF for re-encoding
+          }
+        ]
+
         logConfiguration = {
           logDriver = "awslogs"
           options = {

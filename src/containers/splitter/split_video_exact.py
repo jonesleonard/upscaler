@@ -204,6 +204,7 @@ def build_stream_copy_command(
         "-f", "segment",
         "-segment_time", f"{chunk_seconds}",
         "-reset_timestamps", "1",
+        "-avoid_negative_ts", "make_zero",
         "-map", "0",
         str(output_dir / SEGMENT_PATTERN)
     ]
@@ -280,6 +281,7 @@ def build_reencode_command(
         "-segment_time", f"{chunk_seconds}",
         "-segment_time_delta", str(SEGMENT_TIME_DELTA),
         "-reset_timestamps", "1",
+        "-avoid_negative_ts", "make_zero",
         "-movflags", "+faststart",
         "-video_track_timescale", str(VIDEO_TRACK_TIMESCALE),
         str(output_dir / SEGMENT_PATTERN)
@@ -317,6 +319,65 @@ def run_ffmpeg(cmd: list[str], timeout: int = FFMPEG_TIMEOUT_SECONDS) -> None:
         raise RuntimeError(f"ffmpeg failed with exit code {result.returncode}")
 
 
+def validate_segments(outdir: Path, expected_count: int) -> bool:
+    """
+    Validate that segments were created correctly.
+    
+    Checks for:
+    - Correct number of segments
+    - No zero-byte files
+    - Segments have valid timestamps and duration
+    
+    Args:
+        outdir: Directory containing segments
+        expected_count: Expected number of segments
+        
+    Returns:
+        True if all segments are valid, False otherwise
+    """
+    segments = sorted(outdir.glob("seg_*.mp4"))
+    
+    if len(segments) != expected_count:
+        logger.warning(
+            f"Segment count mismatch: expected {expected_count}, "
+            f"got {len(segments)}"
+        )
+        return False
+    
+    for seg in segments:
+        # Check file size
+        if seg.stat().st_size == 0:
+            logger.warning(f"Zero-byte segment: {seg}")
+            return False
+        
+        # Quick timestamp validation with ffprobe
+        try:
+            cmd = [
+                "ffprobe", "-v", "error",
+                "-show_entries", "format=duration,start_time",
+                "-of", "json",
+                str(seg)
+            ]
+            result = run_command(cmd, timeout=30)
+            
+            if result.returncode != 0:
+                logger.warning(f"Failed to probe segment: {seg}")
+                return False
+                
+            data = json.loads(result.stdout)
+            duration = float(data["format"].get("duration", 0))
+            
+            if duration <= 0:
+                logger.warning(f"Invalid duration for segment: {seg}")
+                return False
+                
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            logger.warning(f"Failed to validate segment {seg}: {e}")
+            return False
+    
+    return True
+
+
 def main() -> None:
     """Main entry point for video splitting."""
     ap = argparse.ArgumentParser(
@@ -332,6 +393,10 @@ def main() -> None:
     duration_group.add_argument(
         "--seconds", type=float,
         help="Chunk length in seconds (overrides --minutes)"
+    )
+    duration_group.add_argument(
+        "--segments", type=int,
+        help="Number of segments to create (calculates chunk duration from video length)"
     )
 
     ap.add_argument(
@@ -388,17 +453,27 @@ def main() -> None:
     validate_input_file(args.input)
     outdir = validate_output_dir(args.outdir)
 
-    # Calculate chunk duration
-    chunk_s = args.seconds if args.seconds is not None else args.minutes * 60.0
-    if chunk_s <= 0:
-        logger.error("Chunk duration must be greater than 0")
-        sys.exit(1)
-
-    # Get video duration
+    # Get video duration first (needed for --segments calculation)
     try:
         duration = ffprobe_duration(args.input)
     except RuntimeError as e:
         logger.error(f"Failed to get video duration: {e}")
+        sys.exit(1)
+
+    # Calculate chunk duration
+    if args.segments is not None:
+        if args.segments <= 0:
+            logger.error("Number of segments must be greater than 0")
+            sys.exit(1)
+        chunk_s = duration / args.segments
+        logger.info(f"Splitting into {args.segments} segments")
+    elif args.seconds is not None:
+        chunk_s = args.seconds
+    else:
+        chunk_s = args.minutes * 60.0
+
+    if chunk_s <= 0:
+        logger.error("Chunk duration must be greater than 0")
         sys.exit(1)
 
     est_segments = int(math.ceil(duration / chunk_s))
@@ -409,23 +484,65 @@ def main() -> None:
     logger.info(f"Estimated segments: {est_segments}")
     logger.info(f"Output dir: {outdir}")
 
+    # Check if hybrid mode is enabled (default: true)
+    retry_with_reencode = os.environ.get(
+        'RETRY_WITH_REENCODE', 'true'
+    ).lower() == 'true'
+    
     # Build and run FFmpeg command
-    if args.stream_copy:
-        logger.info("Using stream copy mode (fast, splits on existing keyframes)")
-        cmd = build_stream_copy_command(args.input, outdir, chunk_s)
+    if args.stream_copy or not retry_with_reencode:
+        # Single-pass mode (user choice or retry disabled)
+        if args.stream_copy:
+            logger.info("Using stream copy mode (user requested)")
+            cmd = build_stream_copy_command(args.input, outdir, chunk_s)
+        else:
+            logger.info("Using re-encode mode (precise boundaries)")
+            cmd = build_reencode_command(
+                args.input, outdir, chunk_s,
+                args.vcodec, args.acodec, args.abitrate,
+                args.crf, args.preset, args.pix_fmt, args.force_keyframes
+            )
+        
+        try:
+            run_ffmpeg(cmd, timeout=args.timeout)
+        except RuntimeError:
+            sys.exit(1)
     else:
-        logger.info("Using re-encode mode (precise segment boundaries)")
-        cmd = build_reencode_command(
-            args.input, outdir, chunk_s,
-            args.vcodec, args.acodec, args.abitrate,
-            args.crf, args.preset, args.pix_fmt,
-            args.force_keyframes
-        )
-
-    try:
-        run_ffmpeg(cmd, timeout=args.timeout)
-    except RuntimeError:
-        sys.exit(1)
+        # Hybrid mode: try stream copy first, re-encode if validation fails
+        logger.info("🚀 Attempting fast stream copy first (hybrid mode)...")
+        cmd_stream = build_stream_copy_command(args.input, outdir, chunk_s)
+        
+        try:
+            run_ffmpeg(cmd_stream, timeout=args.timeout)
+            
+            # Validate segments
+            logger.info("Validating segments...")
+            if validate_segments(outdir, est_segments):
+                logger.info("✅ Stream copy successful - segments validated")
+            else:
+                logger.warning(
+                    "⚠️  Stream copy produced invalid segments, "
+                    "retrying with re-encode..."
+                )
+                
+                # Clean up invalid segments
+                for seg in outdir.glob("seg_*.mp4"):
+                    logger.debug(f"Removing invalid segment: {seg}")
+                    seg.unlink()
+                
+                # Retry with re-encode
+                logger.info("Re-encoding with precise segment boundaries...")
+                cmd_reencode = build_reencode_command(
+                    args.input, outdir, chunk_s,
+                    args.vcodec, args.acodec, args.abitrate,
+                    args.crf, args.preset, args.pix_fmt,
+                    args.force_keyframes
+                )
+                run_ffmpeg(cmd_reencode, timeout=args.timeout)
+                
+                logger.info("✅ Re-encode completed successfully")
+        except RuntimeError:
+            sys.exit(1)
 
     # Count generated segments
     segments = list(outdir.glob("seg_*.mp4"))

@@ -216,22 +216,39 @@ download_input_video() {
 # ============================================================================
 
 split_video() {
-    local chunk_seconds="${CHUNK_SECONDS:-300}"
-    local use_stream_copy="${USE_STREAM_COPY:-true}"
+    local chunk_seconds="${CHUNK_SECONDS:-}"
+    local segment_count="${SEGMENT_COUNT:-}"
+    local use_stream_copy="${USE_STREAM_COPY:-false}"  # Default to re-encode for precision
     local a_codec="${A_CODEC:-aac}"
     local a_bitrate="${A_BITRATE:-192k}"
     local v_codec="${V_CODEC:-libx264}"
+    local v_crf="${V_CRF:-18}"  # High quality CRF for re-encoding
 
-    log_info "Splitting video into ${chunk_seconds}-second segments..."
+    local split_args=("$INPUT_FILE" --outdir "$OUTPUT_DIR")
 
-    local split_args=("$INPUT_FILE" --seconds "$chunk_seconds" --outdir "$OUTPUT_DIR")
+    # Determine split mode: segment count or chunk duration
+    if [[ -n "$segment_count" ]]; then
+        log_info "Splitting video into ${segment_count} segments..."
+        split_args+=(--segments "$segment_count")
+    elif [[ -n "$chunk_seconds" ]]; then
+        log_info "Splitting video into ${chunk_seconds}-second segments..."
+        split_args+=(--seconds "$chunk_seconds")
+    else
+        # Default to 5 minutes (300 seconds)
+        chunk_seconds=300
+        log_info "Splitting video into ${chunk_seconds}-second segments (default)..."
+        split_args+=(--seconds "$chunk_seconds")
+    fi
 
     if [[ "$use_stream_copy" == "true" ]]; then
-        log_info "Using stream copy mode (fast, no re-encoding)"
+        log_info "Using stream copy mode (fast, cuts only at keyframes)"
+        log_warn "Stream copy may cause gaps/overlaps at segment boundaries"
+        log_warn "For precise cuts, set USE_STREAM_COPY=false"
         split_args+=(--stream-copy)
     else
-        log_info "Using re-encode mode (precise, slower)"
+        log_info "Using re-encode mode (precise segment boundaries)"
         split_args+=(--vcodec "$v_codec" --acodec "$a_codec" --abitrate "$a_bitrate")
+        split_args+=(--crf "$v_crf")
     fi
 
     # Capture output from Python script for better error diagnostics
@@ -369,7 +386,8 @@ create_manifest() {
 
     if ! env OUTPUT_DIR="$OUTPUT_DIR" \
              OUTPUT_S3_PREFIX="$OUTPUT_S3_PREFIX" \
-             CHUNK_SECONDS="${CHUNK_SECONDS:-300}" \
+             SEGMENT_COUNT="${SEGMENT_COUNT:-}" \
+             CHUNK_SECONDS="${CHUNK_SECONDS:-}" \
              SHOT_GUIDANCE_JSON="$shot_guidance_value" \
              python3 /app/create_manifest.py; then
         log_error "Failed to create manifest"
@@ -398,9 +416,12 @@ main() {
     log_info "  INPUT_S3_URI: ${INPUT_S3_URI:-<not set>}"
     log_info "  OUTPUT_S3_PREFIX: ${OUTPUT_S3_PREFIX:-<not set>}"
     log_info "  MANIFEST_KEY: ${MANIFEST_KEY:-<not set>}"
-    log_info "  CHUNK_SECONDS: ${CHUNK_SECONDS:-300}"
-    log_info "  USE_STREAM_COPY: ${USE_STREAM_COPY:-true}"
-    log_info "  VIDEO_CODEC: ${V_CODEC:-h264}"
+    log_info "  SEGMENT_COUNT: ${SEGMENT_COUNT:-<not set>}"
+    log_info "  CHUNK_SECONDS: ${CHUNK_SECONDS:-<not set> (default: 300 if SEGMENT_COUNT not set)}"
+    log_info "  USE_STREAM_COPY: ${USE_STREAM_COPY:-false}"
+    log_info "  RETRY_WITH_REENCODE: ${RETRY_WITH_REENCODE:-true} (hybrid mode)"
+    log_info "  VIDEO_CODEC: ${V_CODEC:-libx264}"
+    log_info "  VIDEO_CRF: ${V_CRF:-18}"
     log_info "  AUDIO_CODEC: ${A_CODEC:-aac}"
     log_info "  AUDIO_BITRATE: ${A_BITRATE:-192k}"
     log_info "  SCENE_THRESHOLD: ${SCENE_THRESHOLD:-0.30}"
