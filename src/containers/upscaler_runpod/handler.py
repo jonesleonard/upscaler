@@ -237,7 +237,12 @@ def upscale_segment(job: Dict[str, Any]) -> Dict[str, Any]:
         
         for param_key, env_var in param_mapping.items():
             if param_key in params and params[param_key] is not None:
-                env[env_var] = str(params[param_key])
+                value = params[param_key]
+                # Convert boolean to lowercase string for bash compatibility
+                if isinstance(value, bool):
+                    env[env_var] = "true" if value else "false"
+                else:
+                    env[env_var] = str(value)
         
         # Execute the shell script
         logger.info(f"Executing: {SCRIPT_PATH}")

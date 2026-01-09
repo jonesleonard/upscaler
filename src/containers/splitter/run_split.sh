@@ -223,7 +223,9 @@ split_video() {
     local a_bitrate="${A_BITRATE:-192k}"
     local v_codec="${V_CODEC:-libx264}"
     local v_crf="${V_CRF:-18}"  # High quality CRF for re-encoding
-
+    # Handle Step Functions JsonToString(null) -> "null" string
+    [[ "$segment_count" == "null" ]] && segment_count=""
+    [[ "$chunk_seconds" == "null" ]] && chunk_seconds=""
     local split_args=("$INPUT_FILE" --outdir "$OUTPUT_DIR")
 
     # Determine split mode: segment count or chunk duration
