@@ -6,9 +6,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/lambdas/**'
+    
   pull_request:
     branches:
       - main
+    paths:
+      - 'src/lambdas/**'
 
 # Best Practice: Set default permissions to read-only for security
 permissions:
