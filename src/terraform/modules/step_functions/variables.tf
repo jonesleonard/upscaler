@@ -84,3 +84,19 @@ variable "runpod_max_concurrency" {
   type        = number
   default     = 10
 }
+
+################################################################################
+# ECS Configuration
+################################################################################
+
+variable "ecs_max_concurrency" {
+  description = "The maximum concurrency for ECS Batch upscale jobs."
+  type        = number
+  default     = 4
+}
+
+variable "ecs_upscale_timeout_seconds" {
+  description = "Timeout in seconds for each ECS Batch upscale job (UpscaleOne_ECS)."
+  type        = number
+  default     = 14400
+}

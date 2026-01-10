@@ -229,3 +229,35 @@ variable "runpod_max_concurrency" {
   type        = number
   default     = 10
 }
+
+variable "ecs_max_concurrency" {
+  description = "The maximum concurrency for parallel ECS Batch upscale tasks."
+  type        = number
+  default     = 4
+}
+
+variable "ecs_upscale_timeout_seconds" {
+  description = "Timeout in seconds for each ECS Batch upscale job (UpscaleOne_ECS in Step Functions)."
+  type        = number
+  default     = 14400
+}
+
+################################################################################
+# Model Configuration
+################################################################################
+
+variable "dit_model_s3_uri" {
+  description = "S3 URI for the DIT model file (e.g., s3://bucket/models/seedvr2_ema_7b_fp16.safetensors). Required for EC2 Batch upscale jobs."
+  type        = string
+}
+
+variable "vae_model_s3_uri" {
+  description = "S3 URI for the VAE model file (e.g., s3://bucket/models/ema_vae_fp16.safetensors). Required for EC2 Batch upscale jobs."
+  type        = string
+}
+
+variable "use_s5cmd" {
+  description = "Use s5cmd for faster S3 downloads in EC2 launch template. Requires internet access on instances."
+  type        = bool
+  default     = false
+}

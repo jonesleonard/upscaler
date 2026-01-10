@@ -4,17 +4,44 @@
   "States": {
     "Define Defaults": {
       "Type": "Pass",
-      "Next": "Apply Defaults",
-      "ResultPath": "$.inputDefaults",
       "Parameters": {
         "exec_id.$": "$$.Execution.StartTime",
-        "splitter": {
-          "chunk_seconds": 300,
-          "use_stream_copy": false,
-          "retry_with_reencode": true,
-          "v_crf": 18
-        }
-      }
+        "input_s3_uri": "",
+        "execution_mode": "ecs",
+        "presign_expire_secs": 14400,
+        "splitter_job_definition": ${SPLIT_JOB_DEFINITION_ARN},
+        "splitter_segment_count": 2,
+        "splitter_chunk_seconds": 300,
+        "splitter_use_stream_copy": false,
+        "splitter_retry_with_reencode": true,
+        "splitter_v_crf": 18,
+        "upscale_job_definition": ${UPSCALE_JOB_DEFINITION_ARN},
+        "upscale_runpod_endpoint": "",
+        "upscale_ecs_max_concurrency": ${ECS_MAX_CONCURRENCY},
+        "upscale_log_level": "DEBUG",
+        "upscale_debug": true,
+        "upscale_seed": 42,
+        "upscale_color_correction": "lab",
+        "upscale_model": "seedvr2_ema_7b_fp16.safetensors",
+        "upscale_resolution": 1080,
+        "upscale_batch_size_strategy": "quality",
+        "upscale_batch_size_explicit": "",
+        "upscale_chunk_size_strategy": "recommended",
+        "upscale_chunk_size_explicit": 0,
+        "upscale_attention_mode": "sageattn_2",
+        "upscale_temporal_overlap": 4,
+        "upscale_vae_encode_tiled": false,
+        "upscale_vae_decode_tiled": false,
+        "upscale_cache_dit": false,
+        "upscale_cache_vae": false,
+        "upscale_compile_dit": false,
+        "upscale_compile_vae": false,
+        "upscale_video_backend": "ffmpeg",
+        "upscale_ten_bit": true,
+        "combine_job_definition": ${COMBINE_JOB_DEFINITION_ARN}
+      },
+      "ResultPath": "$.inputDefaults",
+      "Next": "Apply Defaults"
     },
     "Apply Defaults": {
       "Type": "Pass",
@@ -31,18 +58,18 @@
       "Parameters": {
         "JobName": "split-video",
         "JobQueue": "${SPLIT_JOB_QUEUE_ARN}",
-        "JobDefinition.$": "$.split_job_definition",
+        "JobDefinition.$": "$.splitter_job_definition",
         "ContainerOverrides": {
           "Environment": [
             { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
             { "Name": "INPUT_S3_URI", "Value.$": "$.input_s3_uri" },
-            { "Name": "CHUNK_SECONDS", "Value.$": "States.JsonToString($.splitter.chunk_seconds)" },
-            { "Name": "SEGMENT_COUNT", "Value.$": "States.JsonToString($.splitter.segment_count)" },
+            { "Name": "SEGMENT_COUNT", "Value.$": "States.JsonToString($.splitter_segment_count)" },
+            { "Name": "CHUNK_SECONDS", "Value.$": "States.JsonToString($.splitter_chunk_seconds)" },
+            { "Name": "USE_STREAM_COPY", "Value.$": "States.JsonToString($.splitter_use_stream_copy)" },
+            { "Name": "RETRY_WITH_REENCODE", "Value.$": "States.JsonToString($.splitter_retry_with_reencode)" },
+            { "Name": "V_CRF", "Value.$": "States.JsonToString($.splitter_v_crf)" },
             { "Name": "MANIFEST_KEY", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/manifest.json', $.exec_id)" },
-            { "Name": "OUTPUT_S3_PREFIX", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}', $.exec_id)" },
-            { "Name": "USE_STREAM_COPY", "Value.$": "States.JsonToString($.splitter.use_stream_copy)" },
-            { "Name": "RETRY_WITH_REENCODE", "Value.$": "States.JsonToString($.splitter.retry_with_reencode)" },
-            { "Name": "V_CRF", "Value.$": "States.JsonToString($.splitter.v_crf)" }
+            { "Name": "OUTPUT_S3_PREFIX", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}', $.exec_id)" }
           ]
         }
       },
@@ -62,29 +89,148 @@
     "ParseManifest": {
       "Type": "Pass",
       "Parameters": {
-        "exec_id.$": "$.exec_id",
-        "input_s3_uri.$": "$.input_s3_uri",
-        "splitter.$": "$.splitter",
-        "runpod.$": "$.runpod",
-        "params.$": "$.params",
-        "combine_job_definition.$": "$.combine_job_definition",
-        "presign_expire_secs.$": "$.presign_expire_secs",
-        "manifest.$": "States.StringToJson($.manifest_obj.Body)"
+        "body.$": "States.StringToJson($.manifest_obj.Body)"
       },
-      "ResultPath": "$",
-      "Next": "UpscaleSegmentsRunPod"
+      "ResultPath": "$.manifest",
+      "Next": "ChooseExecutionMode"
+    },
+    "ChooseExecutionMode": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.execution_mode",
+          "StringEquals": "ecs",
+          "Next": "UpscaleSegmentsECS"
+        },
+        {
+          "Variable": "$.execution_mode",
+          "StringEquals": "runpod",
+          "Next": "UpscaleSegmentsRunPod"
+        }
+      ],
+      "Default": "UpscaleSegmentsECS"
+    },
+    "UpscaleSegmentsECS": {
+      "Type": "Map",
+      "ItemsPath": "$.manifest.body.segments",
+      "MaxConcurrency.$": "$.upscale_ecs_max_concurrency",
+      "Parameters": {
+        "exec_id.$": "$.exec_id",
+        "segment.$": "$$.Map.Item.Value",
+        "recommendations.$": "$.manifest.body.metadata.recommendations",
+        "upscale_job_definition.$": "$.upscale_job_definition",
+        "upscale_log_level.$": "$.upscale_log_level",
+        "upscale_debug.$": "$.upscale_debug",
+        "upscale_seed.$": "$.upscale_seed",
+        "upscale_color_correction.$": "$.upscale_color_correction",
+        "upscale_model.$": "$.upscale_model",
+        "upscale_resolution.$": "$.upscale_resolution",
+        "upscale_batch_size_strategy.$": "$.upscale_batch_size_strategy",
+        "upscale_batch_size_explicit.$": "$.upscale_batch_size_explicit",
+        "upscale_chunk_size_strategy.$": "$.upscale_chunk_size_strategy",
+        "upscale_chunk_size_explicit.$": "$.upscale_chunk_size_explicit",
+        "upscale_attention_mode.$": "$.upscale_attention_mode",
+        "upscale_temporal_overlap.$": "$.upscale_temporal_overlap",
+        "upscale_vae_encode_tiled.$": "$.upscale_vae_encode_tiled",
+        "upscale_vae_decode_tiled.$": "$.upscale_vae_decode_tiled",
+        "upscale_cache_dit.$": "$.upscale_cache_dit",
+        "upscale_cache_vae.$": "$.upscale_cache_vae",
+        "upscale_compile_dit.$": "$.upscale_compile_dit",
+        "upscale_compile_vae.$": "$.upscale_compile_vae",
+        "upscale_video_backend.$": "$.upscale_video_backend",
+        "upscale_ten_bit.$": "$.upscale_ten_bit"
+      },
+      "Iterator": {
+        "StartAt": "UpscaleOne_ECS",
+        "States": {
+          "UpscaleOne_ECS": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::batch:submitJob.sync",
+            "Parameters": {
+              "JobName.$": "States.Format('upscale-{}-{}', $.exec_id, $.segment.index)",
+              "JobQueue": "${UPSCALE_JOB_QUEUE_ARN}",
+              "JobDefinition.$": "$.upscale_job_definition",
+              "ContainerOverrides": {
+                "Environment": [
+                  { "Name": "EXEC_ID", "Value.$": "$.exec_id" },
+                  { "Name": "SEGMENT_INDEX", "Value.$": "States.JsonToString($.segment.index)" },
+                  { "Name": "INPUT_SEGMENT_S3_URI", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/raw/{}', $.exec_id, $.segment.filename)" },
+                  { "Name": "OUTPUT_SEGMENT_S3_URI", "Value.$": "States.Format('s3://${BUCKET_NAME}/runs/{}/upscaled/{}', $.exec_id, $.segment.filename)" },
+                  { "Name": "LOG_LEVEL", "Value.$": "$.upscale_log_level" },
+                  { "Name": "DEBUG", "Value.$": "States.JsonToString($.upscale_debug)" },
+                  { "Name": "SEED", "Value.$": "States.JsonToString($.upscale_seed)" },
+                  { "Name": "COLOR_CORRECTION", "Value.$": "$.upscale_color_correction" },
+                  { "Name": "MODEL", "Value.$": "$.upscale_model" },
+                  { "Name": "RESOLUTION", "Value.$": "States.JsonToString($.upscale_resolution)" },
+                  { "Name": "BATCH_SIZE_STRATEGY", "Value.$": "$.upscale_batch_size_strategy" },
+                  { "Name": "BATCH_SIZE_EXPLICIT", "Value.$": "States.JsonToString($.upscale_batch_size_explicit)" },
+                  { "Name": "BATCH_SIZE_CONSERVATIVE", "Value.$": "States.JsonToString($.recommendations.batch_size_conservative)" },
+                  { "Name": "BATCH_SIZE_QUALITY", "Value.$": "States.JsonToString($.recommendations.batch_size_quality)" },
+                  { "Name": "CHUNK_SIZE_STRATEGY", "Value.$": "$.upscale_chunk_size_strategy" },
+                  { "Name": "CHUNK_SIZE_EXPLICIT", "Value.$": "States.JsonToString($.upscale_chunk_size_explicit)" },
+                  { "Name": "CHUNK_SIZE_RECOMMENDED", "Value.$": "States.JsonToString($.recommendations.chunk_size_recommended)" },
+                  { "Name": "CHUNK_SIZE_FALLBACK", "Value.$": "States.JsonToString($.recommendations.chunk_size_fallback)" },
+                  { "Name": "ATTENTION_MODE", "Value.$": "$.upscale_attention_mode" },
+                  { "Name": "TEMPORAL_OVERLAP", "Value.$": "States.JsonToString($.upscale_temporal_overlap)" },
+                  { "Name": "VAE_ENCODE_TILED", "Value.$": "States.JsonToString($.upscale_vae_encode_tiled)" },
+                  { "Name": "VAE_DECODE_TILED", "Value.$": "States.JsonToString($.upscale_vae_decode_tiled)" },
+                  { "Name": "CACHE_DIT", "Value.$": "States.JsonToString($.upscale_cache_dit)" },
+                  { "Name": "CACHE_VAE", "Value.$": "States.JsonToString($.upscale_cache_vae)" },
+                  { "Name": "COMPILE_DIT", "Value.$": "States.JsonToString($.upscale_compile_dit)" },
+                  { "Name": "COMPILE_VAE", "Value.$": "States.JsonToString($.upscale_compile_vae)" },
+                  { "Name": "VIDEO_BACKEND", "Value.$": "$.upscale_video_backend" },
+                  { "Name": "TEN_BIT", "Value.$": "States.JsonToString($.upscale_ten_bit)" }
+                ]
+              }
+            },
+            "TimeoutSeconds": ${ECS_UPSCALE_TIMEOUT_SECONDS},
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Batch.AWSBatchException"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 2,
+                "BackoffRate": 2.0
+              }
+            ],
+            "End": true
+          }
+        }
+      },
+      "ResultPath": "$.upscale_results",
+      "Next": "CombineSegments"
     },
     "UpscaleSegmentsRunPod": {
       "Type": "Map",
-      "ItemsPath": "$.manifest.segments",
+      "ItemsPath": "$.manifest.body.segments",
       "MaxConcurrency": ${RUNPOD_MAX_CONCURRENCY},
       "Parameters": {
         "exec_id.$": "$.exec_id",
         "segment.$": "$$.Map.Item.Value",
-        "recommendations.$": "$.manifest.metadata.recommendations",
-        "runpod.$": "$.runpod",
-        "params.$": "$.params",
-        "presign_expire_secs.$": "$.presign_expire_secs"
+        "recommendations.$": "$.manifest.body.metadata.recommendations",
+        "presign_expire_secs.$": "$.presign_expire_secs",
+        "upscale_runpod_endpoint.$": "$.upscale_runpod_endpoint",
+        "upscale_log_level.$": "$.upscale_log_level",
+        "upscale_debug.$": "$.upscale_debug",
+        "upscale_seed.$": "$.upscale_seed",
+        "upscale_color_correction.$": "$.upscale_color_correction",
+        "upscale_model.$": "$.upscale_model",
+        "upscale_resolution.$": "$.upscale_resolution",
+        "upscale_batch_size_strategy.$": "$.upscale_batch_size_strategy",
+        "upscale_batch_size_explicit.$": "$.upscale_batch_size_explicit",
+        "upscale_chunk_size_strategy.$": "$.upscale_chunk_size_strategy",
+        "upscale_chunk_size_explicit.$": "$.upscale_chunk_size_explicit",
+        "upscale_attention_mode.$": "$.upscale_attention_mode",
+        "upscale_temporal_overlap.$": "$.upscale_temporal_overlap",
+        "upscale_vae_encode_tiled.$": "$.upscale_vae_encode_tiled",
+        "upscale_vae_decode_tiled.$": "$.upscale_vae_decode_tiled",
+        "upscale_cache_dit.$": "$.upscale_cache_dit",
+        "upscale_cache_vae.$": "$.upscale_cache_vae",
+        "upscale_compile_dit.$": "$.upscale_compile_dit",
+        "upscale_compile_vae.$": "$.upscale_compile_vae",
+        "upscale_video_backend.$": "$.upscale_video_backend",
+        "upscale_ten_bit.$": "$.upscale_ten_bit"
       },
       "Iterator": {
         "StartAt": "PresignSegmentIO",
@@ -147,9 +293,32 @@
                 "task_token.$": "$$.Task.Token",
                 "input_presigned_url.$": "$.presigned_urls.input[0]",
                 "output_presigned_url.$": "$.presigned_urls.output[0]",
-                "runpod.$": "$.runpod",
                 "segment.$": "$.segment",
-                "params.$": "States.JsonMerge($.params, $.recommendations, false)"
+                "runpod_endpoint.$": "$.upscale_runpod_endpoint",
+                "log_level.$": "$.upscale_log_level",
+                "debug.$": "$.upscale_debug",
+                "seed.$": "$.upscale_seed",
+                "color_correction.$": "$.upscale_color_correction",
+                "model.$": "$.upscale_model",
+                "resolution.$": "$.upscale_resolution",
+                "batch_size_strategy.$": "$.upscale_batch_size_strategy",
+                "batch_size_explicit.$": "$.upscale_batch_size_explicit",
+                "batch_size_conservative.$": "$.recommendations.batch_size_conservative",
+                "batch_size_quality.$": "$.recommendations.batch_size_quality",
+                "chunk_size_strategy.$": "$.upscale_chunk_size_strategy",
+                "chunk_size_explicit.$": "$.upscale_chunk_size_explicit",
+                "chunk_size_recommended.$": "$.recommendations.chunk_size_recommended",
+                "chunk_size_fallback.$": "$.recommendations.chunk_size_fallback",
+                "attention_mode.$": "$.upscale_attention_mode",
+                "temporal_overlap.$": "$.upscale_temporal_overlap",
+                "vae_encode_tiled.$": "$.upscale_vae_encode_tiled",
+                "vae_decode_tiled.$": "$.upscale_vae_decode_tiled",
+                "cache_dit.$": "$.upscale_cache_dit",
+                "cache_vae.$": "$.upscale_cache_vae",
+                "compile_dit.$": "$.upscale_compile_dit",
+                "compile_vae.$": "$.upscale_compile_vae",
+                "video_backend.$": "$.upscale_video_backend",
+                "ten_bit.$": "$.upscale_ten_bit"
               }
             },
             "TimeoutSeconds": 14400,

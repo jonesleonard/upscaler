@@ -171,3 +171,23 @@ variable "log_retention_days" {
     error_message = "Log retention must be a valid CloudWatch Logs retention period."
   }
 }
+
+################################################################################
+# Model Configuration
+################################################################################
+
+variable "dit_model_s3_uri" {
+  description = "S3 URI for the DIT model file (e.g., s3://bucket/models/seedvr2_ema_7b_fp16.safetensors)"
+  type        = string
+}
+
+variable "vae_model_s3_uri" {
+  description = "S3 URI for the VAE model file (e.g., s3://bucket/models/ema_vae_fp16.safetensors)"
+  type        = string
+}
+
+variable "use_s5cmd" {
+  description = "Use s5cmd for faster S3 downloads in launch template. Requires internet access."
+  type        = bool
+  default     = false
+}

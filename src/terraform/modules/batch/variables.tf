@@ -162,3 +162,25 @@ variable "enable_upscale_runpod" {
   type        = bool
   default     = false
 }
+
+################################################################################
+# Model Configuration
+################################################################################
+
+variable "dit_model_s3_uri" {
+  description = "S3 URI for the DIT model file. Passed to upscale module."
+  type        = string
+  default     = ""
+}
+
+variable "vae_model_s3_uri" {
+  description = "S3 URI for the VAE model file. Passed to upscale module."
+  type        = string
+  default     = ""
+}
+
+variable "use_s5cmd" {
+  description = "Use s5cmd for faster S3 downloads. Passed to upscale module."
+  type        = bool
+  default     = false
+}

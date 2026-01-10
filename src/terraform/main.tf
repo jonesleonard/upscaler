@@ -145,6 +145,11 @@ module "batch" {
   enable_combine        = var.batch_enable_combine
   enable_upscale        = var.batch_enable_upscale
   enable_upscale_runpod = var.batch_enable_upscale_runpod
+
+  # Model configuration
+  dit_model_s3_uri = var.dit_model_s3_uri
+  vae_model_s3_uri = var.vae_model_s3_uri
+  use_s5cmd        = var.use_s5cmd
 }
 
 ################################################################################
@@ -199,8 +204,10 @@ module "step_functions" {
   presign_s3_urls_lambda_function_arn   = module.lambda.presign_model_urls_lambda_function_arn
   submit_runpod_job_lambda_function_arn = module.lambda.submit_runpod_job_lambda_function_arn
 
-  # RunPod Configuration
-  runpod_max_concurrency = var.runpod_max_concurrency
+  # Concurrency Configuration
+  runpod_max_concurrency      = var.runpod_max_concurrency
+  ecs_max_concurrency         = var.ecs_max_concurrency
+  ecs_upscale_timeout_seconds = var.ecs_upscale_timeout_seconds
 }
 
 ################################################################################

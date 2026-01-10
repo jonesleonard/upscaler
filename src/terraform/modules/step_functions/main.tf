@@ -7,7 +7,7 @@ locals {
 }
 
 ################################################################################  
-# State Machine: Upscale Videos
+# State Machine: Upscale Videos RunPod
 ################################################################################
 
 module "upscale_video_state_machine" {
@@ -32,8 +32,10 @@ module "upscale_video_state_machine" {
     PRESIGN_SEGMENT_LAMBDA_ARN   = var.presign_s3_urls_lambda_function_arn
     SUBMIT_RUNPOD_JOB_LAMBDA_ARN = var.submit_runpod_job_lambda_function_arn
 
-    # RunPod Configuration
-    RUNPOD_MAX_CONCURRENCY = var.runpod_max_concurrency
+    # Concurrency Configuration
+    RUNPOD_MAX_CONCURRENCY      = var.runpod_max_concurrency
+    ECS_MAX_CONCURRENCY         = var.ecs_max_concurrency
+    ECS_UPSCALE_TIMEOUT_SECONDS = var.ecs_upscale_timeout_seconds
   })
 
   service_integrations = {

@@ -94,6 +94,11 @@ module "upscale" {
 
   # Logging
   log_retention_days = var.log_retention_days
+
+  # Model configuration
+  dit_model_s3_uri = var.dit_model_s3_uri
+  vae_model_s3_uri = var.vae_model_s3_uri
+  use_s5cmd        = var.use_s5cmd
 }
 
 ################################################################################

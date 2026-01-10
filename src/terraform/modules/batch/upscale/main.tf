@@ -2,6 +2,37 @@ locals {
   job_definition_name = "${var.project_name}-${var.environment}-upscale-job"
   job_queue_name      = "${var.project_name}-${var.environment}-upscale-job-queue"
   log_group_name      = "/aws/batch/${var.project_name}-upscale-${var.environment}"
+
+  # Render user data with model S3 URIs
+  user_data = base64encode(templatefile("${path.module}/launch_templates/batch_upscale.sh", {
+    dit_model_s3_uri = var.dit_model_s3_uri
+    vae_model_s3_uri = var.vae_model_s3_uri
+    use_s5cmd        = var.use_s5cmd ? "true" : "false"
+  }))
+}
+
+################################################################################
+# Launch Template
+################################################################################
+
+resource "aws_launch_template" "upscale" {
+  name_prefix = "${var.project_name}-${var.environment}-upscale-"
+  description = "Launch template for Batch upscale compute instances with model pre-download"
+
+  user_data = local.user_data
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = merge(var.tags, {
+      Name      = "${var.project_name}-${var.environment}-upscale"
+      Component = var.component
+    })
+  }
+
+  tags = merge(var.tags, {
+    Name      = "${var.project_name}-${var.environment}-upscale-lt"
+    Component = var.component
+  })
 }
 
 ################################################################################
@@ -36,6 +67,11 @@ module "batch_upscale" {
         security_group_ids = [var.security_group_id]
         subnets            = var.subnets
 
+        launch_template = {
+          launch_template_id = aws_launch_template.upscale.id
+          version            = "$Latest"
+        }
+
         tags = merge(var.tags, {
           Name      = "${var.project_name}-${var.environment}-upscale-ec2-gpu"
           Component = var.component
@@ -58,6 +94,11 @@ module "batch_upscale" {
 
         security_group_ids = [var.security_group_id]
         subnets            = var.subnets
+
+        launch_template = {
+          launch_template_id = aws_launch_template.upscale.id
+          version            = "$Latest"
+        }
 
         tags = merge(var.tags, {
           Name      = "${var.project_name}-${var.environment}-upscale-ec2-gpu-spot"
@@ -108,6 +149,21 @@ module "batch_upscale" {
           { type = "VCPU", value = tostring(var.vcpus) },
           { type = "MEMORY", value = tostring(var.memory) },
           { type = "GPU", value = tostring(var.gpu_count) }
+        ]
+
+        volumes = [
+          {
+            "name" : "modelcache",
+            "host" : { "sourcePath" : "/opt/seedvr2/models" }
+          }
+        ]
+
+        mountPoints = [
+          {
+            sourceVolume  = "modelcache"
+            containerPath = "/opt/seedvr2/models"
+            readOnly      = true
+          }
         ]
 
         jobRoleArn = var.job_upscale_role_arn
