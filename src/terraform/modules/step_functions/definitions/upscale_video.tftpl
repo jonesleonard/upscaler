@@ -9,13 +9,13 @@
         "input_s3_uri": "",
         "execution_mode": "ecs",
         "presign_expire_secs": 14400,
-        "splitter_job_definition": ${SPLIT_JOB_DEFINITION_ARN},
+        "splitter_job_definition": "${SPLIT_JOB_DEFINITION_ARN}",
         "splitter_segment_count": 2,
         "splitter_chunk_seconds": 300,
         "splitter_use_stream_copy": false,
         "splitter_retry_with_reencode": true,
         "splitter_v_crf": 18,
-        "upscale_job_definition": ${UPSCALE_JOB_DEFINITION_ARN},
+        "upscale_job_definition": "${UPSCALE_JOB_DEFINITION_ARN}",
         "upscale_runpod_endpoint": "",
         "upscale_ecs_max_concurrency": ${ECS_MAX_CONCURRENCY},
         "upscale_log_level": "DEBUG",
@@ -38,7 +38,7 @@
         "upscale_compile_vae": false,
         "upscale_video_backend": "ffmpeg",
         "upscale_ten_bit": true,
-        "combine_job_definition": ${COMBINE_JOB_DEFINITION_ARN}
+        "combine_job_definition": "${COMBINE_JOB_DEFINITION_ARN}"
       },
       "ResultPath": "$.inputDefaults",
       "Next": "Apply Defaults"
