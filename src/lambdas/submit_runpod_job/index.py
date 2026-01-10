@@ -19,6 +19,7 @@ from typing import Any, Optional
 from urllib.parse import urljoin
 
 import boto3
+import requests
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
@@ -127,8 +128,6 @@ def submit_runpod_job(
     Returns:
         RunPod job ID
     """
-    import requests
-    
     logger.info(f"Submitting job to RunPod endpoint: {rundpod_endpoint_url}")
     
     payload = {

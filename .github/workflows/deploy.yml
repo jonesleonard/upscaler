@@ -92,9 +92,9 @@ jobs:
           endpoint_data_center_id: "US-KS-2"
           endpoint_gpu_ids: "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-80GB"
           endpoint_workers_min: 0
-          endpoint_workers_max: 3
+          endpoint_workers_max: 5
           endpoint_idle_timeout: 5
-          endpoint_execution_timeout_ms: 18000000
+          endpoint_execution_timeout_ms: 86400000
           endpoint_scaler_type: "QUEUE_DELAY"
           endpoint_scaler_value: 4
         secrets: inherit
