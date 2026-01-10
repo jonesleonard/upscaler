@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir --pre torch torchvision torchaudio \
     --index-url https://download.pytorch.org/whl/cu121
 
 # Preinstall sageattention (used for ATTENTION_MODE=sageattn_2/3)
-RUN pip install --no-cache-dir sageattention flash-attn
+RUN pip install --no-cache-dir sageattention
 
 # Install SeedVR2
 ARG SEEDVR2_REPO="https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git"

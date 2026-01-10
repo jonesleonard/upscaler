@@ -8,7 +8,7 @@ set -euo pipefail
 readonly WORK_DIR="/work"
 readonly INPUT_DIR="${WORK_DIR}/in"
 readonly OUTPUT_DIR="${WORK_DIR}/out"
-readonly MODEL_DIR="${MODELS_DIR:-/runpod-volume/models}"  # Local model storage (can override)
+readonly MODEL_DIR="${MODELS_DIR:-/opt/seedvr2/models}"
 readonly INPUT_FILE="${INPUT_DIR}/segment.mp4"
 readonly AUDIO_FILE="${INPUT_DIR}/audio.aac"
 readonly OUTPUT_FILE_NO_AUDIO="${OUTPUT_DIR}/segment_no_audio.mp4"
@@ -48,7 +48,7 @@ validate_requirements() {
     log_info "Validating requirements..."
     
     # Check required commands
-    local required_commands=(curl python3 ffmpeg)
+    local required_commands=(aws python3 ffmpeg)
     for cmd in "${required_commands[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
             log_error "Required command not found: $cmd"
@@ -56,25 +56,25 @@ validate_requirements() {
         fi
     done
     
-    # Validate required environment variables - now using presigned URLs
-    if [[ -z "${INPUT_PRESIGNED_URL:-}" ]]; then
-        log_error "INPUT_PRESIGNED_URL is required"
+    # Validate required environment variables
+    if [[ -z "${INPUT_SEGMENT_S3_URI:-}" ]]; then
+        log_error "INPUT_SEGMENT_S3_URI is required (e.g., s3://bucket/segments/EXEC123/raw/seg_0003.mp4)"
         exit 1
     fi
     
-    if [[ -z "${OUTPUT_PRESIGNED_URL:-}" ]]; then
-        log_error "OUTPUT_PRESIGNED_URL is required"
+    if [[ -z "${OUTPUT_SEGMENT_S3_URI:-}" ]]; then
+        log_error "OUTPUT_SEGMENT_S3_URI is required (e.g., s3://bucket/segments/EXEC123/upscaled/seg_0003_up.mp4)"
         exit 1
     fi
     
-    # Validate presigned URL format (must be HTTPS)
-    if [[ ! "$INPUT_PRESIGNED_URL" =~ ^https:// ]]; then
-        log_error "INPUT_PRESIGNED_URL must be an HTTPS URL"
+    # Validate S3 URI format
+    if [[ ! "$INPUT_SEGMENT_S3_URI" =~ ^s3:// ]]; then
+        log_error "INPUT_SEGMENT_S3_URI must start with s3:// - got: $INPUT_SEGMENT_S3_URI"
         exit 1
     fi
     
-    if [[ ! "$OUTPUT_PRESIGNED_URL" =~ ^https:// ]]; then
-        log_error "OUTPUT_PRESIGNED_URL must be an HTTPS URL"
+    if [[ ! "$OUTPUT_SEGMENT_S3_URI" =~ ^s3:// ]]; then
+        log_error "OUTPUT_SEGMENT_S3_URI must start with s3:// - got: $OUTPUT_SEGMENT_S3_URI"
         exit 1
     fi
     
@@ -152,6 +152,7 @@ main() {
     readonly COLOR_CORRECTION="${COLOR_CORRECTION:-lab}"
     readonly MODEL="${MODEL:-7b}"
     readonly RESOLUTION="${RESOLUTION:-1080}"
+    readonly CHUNK_SIZE="${CHUNK_SIZE:-}"
     readonly ATTENTION_MODE="${ATTENTION_MODE:-}"
     readonly TEMPORAL_OVERLAP="${TEMPORAL_OVERLAP:-}"
     readonly VAE_ENCODE_TILED="${VAE_ENCODE_TILED:-}"
@@ -229,7 +230,8 @@ main() {
     echo "Video Upscaler - Starting"
     echo "============================================================================"
     log_info "Configuration:"
-    log_info "  MODEL_DIR: $MODEL_DIR"
+    log_info "  INPUT_SEGMENT_S3_URI: $INPUT_SEGMENT_S3_URI"
+    log_info "  OUTPUT_SEGMENT_S3_URI: $OUTPUT_SEGMENT_S3_URI"
     log_info "  DEBUG: $DEBUG"
     log_info "  SEED: $SEED"
     log_info "  COLOR_CORRECTION: $COLOR_CORRECTION"
@@ -257,34 +259,34 @@ main() {
     log_info "Creating work directories..."
     mkdir -p "$INPUT_DIR" "$OUTPUT_DIR"
     
-    # Validate model directory exists and log path early
+    # Validate model directory exists and log path
     if [[ ! -d "$MODEL_DIR" ]]; then
         log_error "Model directory does not exist: $MODEL_DIR"
-        log_error "Ensure your network volume is attached and populated at this path."
+        log_error "Ensure your mounted volume is present at this path."
         exit 1
     fi
     log_info "Model directory: $MODEL_DIR"
     
-    # Check models exist locally (pre-populated or downloaded at startup)
+    # Check models exist locally (pre-populated via launch template user-data)
     local model_count
     model_count=$(find "$MODEL_DIR" -type f 2>/dev/null | wc -l | tr -d ' ')
     
     if [[ "$model_count" -eq 0 ]]; then
         log_error "No models found at $MODEL_DIR"
-        log_error "Models must be present before running jobs."
+        log_error "Models must be present before running jobs (download in launch template user-data)."
         exit 1
     fi
     
     log_info "Using models from $MODEL_DIR ($model_count files found)"
     log_metric "model_file_count" "$model_count"
     
-    # Download input segment using presigned URL
-    log_info "Downloading input segment..."
+    # Download input segment
+    log_info "Downloading input segment from S3..."
     local download_start
     download_start=$(date +%s)
     
-    if ! curl -fsSL --retry 3 --retry-delay 2 -o "$INPUT_FILE" "$INPUT_PRESIGNED_URL"; then
-        log_error "Failed to download input segment from presigned URL"
+    if ! aws s3 cp "$INPUT_SEGMENT_S3_URI" "$INPUT_FILE"; then
+        log_error "Failed to download input segment from: $INPUT_SEGMENT_S3_URI"
         exit 1
     fi
     
@@ -408,29 +410,15 @@ main() {
     log_info "Output segment file size: ${output_size} bytes"
     log_metric "output_segment_size_bytes" "$output_size"
     
-    # Upload upscaled segment using presigned URL
-    log_info "Uploading upscaled segment..."
+    # Upload upscaled segment to S3
+    log_info "Uploading upscaled segment to S3..."
     local upload_start
     upload_start=$(date +%s)
-
-    local response_file
-    response_file="$(mktemp)"
-    local http_code
-    http_code=$(curl -sS -o "$response_file" -w "%{http_code}" --retry 3 --retry-delay 2 \
-        -X PUT -T "$OUTPUT_FILE" -H "x-amz-server-side-encryption: AES256" "$OUTPUT_PRESIGNED_URL" || true)
-    if [[ "$http_code" != "200" && "$http_code" != "204" ]]; then
-        log_error "Failed to upload segment using presigned URL (HTTP ${http_code})"
-        if [[ -s "$response_file" ]]; then
-            if [[ "$http_code" == "403" ]]; then
-                log_error "Upload response: $(cat "$response_file")"
-            else
-                log_error "Upload response: $(cat "$response_file")"
-            fi
-        fi
-        rm -f "$response_file"
+    
+    if ! aws s3 cp "$OUTPUT_FILE" "$OUTPUT_SEGMENT_S3_URI" --sse AES256; then
+        log_error "Failed to upload segment to: $OUTPUT_SEGMENT_S3_URI"
         exit 1
     fi
-    rm -f "$response_file"
     
     local upload_end
     upload_end=$(date +%s)
@@ -445,7 +433,7 @@ main() {
     log_info "  Processing time: ${duration}s"
     log_info "  Input size: ${file_size} bytes"
     log_info "  Output size: ${output_size} bytes"
-    log_info "  Upload time: ${upload_duration}s"
+    log_info "  Output location: $OUTPUT_SEGMENT_S3_URI"
     log_metric "job_status" "success"
     echo "============================================================================"
 }

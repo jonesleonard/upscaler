@@ -44,14 +44,31 @@ def sample_event():
             "filename": "seg_0000.mp4",
             "s3_uri": "s3://bucket/runs/1234/raw/seg_0000.mp4"
         },
-        "runpod": {
-            "run_endpoint": "https://api.runpod.ai/v2/endpoint123/run"
-        },
-        "params": {
-            "model": "seedvr2_ema_7b_fp16",
-            "resolution": 1080,
-            "batch_size_strategy": "quality"
-        }
+        "runpod_endpoint": "https://api.runpod.ai/v2/endpoint123/run",
+        "log_level": "DEBUG",
+        "debug": True,
+        "seed": 42,
+        "color_correction": "lab",
+        "model": "seedvr2_ema_7b_fp16",
+        "resolution": 1080,
+        "batch_size_strategy": "quality",
+        "batch_size_explicit": "",
+        "batch_size_conservative": 129,
+        "batch_size_quality": 257,
+        "chunk_size_strategy": "recommended",
+        "chunk_size_explicit": 0,
+        "chunk_size_recommended": 16,
+        "chunk_size_fallback": 8,
+        "attention_mode": "sageattn_2",
+        "temporal_overlap": 4,
+        "vae_encode_tiled": False,
+        "vae_decode_tiled": False,
+        "cache_dit": False,
+        "cache_vae": False,
+        "compile_dit": False,
+        "compile_vae": False,
+        "video_backend": "ffmpeg",
+        "ten_bit": True
     }
 
 

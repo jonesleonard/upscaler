@@ -24,11 +24,11 @@ on:
         required: false
         type: string
         default: "./src/terraform"
-      tf_var_runpod_max_concurrency:
-        description: "Max concurrency for RunPod jobs"
+      tf_var_use_s5cmd:
+        description: "Use s5cmd for faster S3 downloads"
         required: false
-        type: number
-        default: 1
+        type: boolean
+        default: false
     outputs:
       ecr_splitter_repository_name:
         description: "ECR Repository Name for Splitter Repository"
@@ -42,24 +42,6 @@ on:
       batch_combine_job_definition_name:
         description: "AWS Batch Job Definition Name for Combiner Job"
         value: ${{ jobs.apply-dev.outputs.batch_combine_job_definition_name }}
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Environment to deploy"
-        required: true
-        type: choice
-        options:
-          - dev
-      terraform_version:
-        description: "Terraform version to use"
-        required: false
-        type: string
-        default: "1.14.3"
-      working_directory:
-        description: "Working directory for Terraform"
-        required: false
-        type: string
-        default: "./src/terraform"
 
 # Best Practice: Set default permissions to read-only for security
 permissions:
@@ -177,13 +159,17 @@ jobs:
       - name: Create terraform.tfvars
         env:
             RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+            DIT_MODEL_S3_URI: ${{ secrets.DIT_MODEL_S3_URI }}
+            VAE_MODEL_S3_URI: ${{ secrets.VAE_MODEL_S3_URI }}
         run: |
           cat > terraform.tfvars << EOF
           region       = "${{ vars.AWS_REGION }}"
           environment  = "dev"
           project_name = "${{ vars.PROJECT_NAME || 'upscaler' }}"
           runpod_api_key = "${{ env.RUNPOD_API_KEY }}"
-          runpod_max_concurrency = ${{ inputs.tf_var_runpod_max_concurrency }}
+          dit_model_s3_uri = "${{ env.DIT_MODEL_S3_URI }}"
+          vae_model_s3_uri = "${{ env.VAE_MODEL_S3_URI }}"
+          use_s5cmd = ${{ inputs.tf_var_use_s5cmd }}
           EOF
 
       - name: Terraform Init
@@ -298,13 +284,17 @@ jobs:
       - name: Create terraform.tfvars
         env:
             RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+            DIT_MODEL_S3_URI: ${{ secrets.DIT_MODEL_S3_URI }}
+            VAE_MODEL_S3_URI: ${{ secrets.VAE_MODEL_S3_URI }}
         run: |
           cat > terraform.tfvars << EOF
           region       = "${{ vars.AWS_REGION }}"
           environment  = "dev"
           project_name = "${{ vars.PROJECT_NAME || 'upscaler' }}"
           runpod_api_key = "${{ env.RUNPOD_API_KEY }}"
-          runpod_max_concurrency = ${{ inputs.tf_var_runpod_max_concurrency }}
+          dit_model_s3_uri = "${{ env.DIT_MODEL_S3_URI }}"
+          vae_model_s3_uri = "${{ env.VAE_MODEL_S3_URI }}"
+          use_s5cmd = ${{ inputs.tf_var_use_s5cmd }}
           EOF
 
       - name: Terraform Init

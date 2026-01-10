@@ -23,7 +23,7 @@ import requests
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
-logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
+logger.setLevel(os.environ.get("LOG_LEVEL", "DEBUG"))
 
 # AWS clients
 dynamodb = boto3.resource("dynamodb")
@@ -229,15 +229,31 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             "filename": "seg_0000.mp4",
             "s3_uri": "s3://bucket/runs/1234/raw/seg_0000.mp4"
         },
-        "runpod": {
-            "run_endpoint": "https://api.runpod.ai/v2/1234/run",
-        },
-        "upscale": {
-            "model": "seedvr2_ema_7b_fp16",
-            "resolution": 1080,
-            "batch_size_strategy": "quality",
-            ...
-        }
+        "runpod_endpoint": "https://api.runpod.ai/v2/1234/run",
+        "log_level": "DEBUG",
+        "debug": true,
+        "seed": 42,
+        "color_correction": "lab",
+        "model": "seedvr2_ema_7b_fp16",
+        "resolution": 1080,
+        "batch_size_strategy": "quality",
+        "batch_size_explicit": "",
+        "batch_size_conservative": 129,
+        "batch_size_quality": 257,
+        "chunk_size_strategy": "recommended",
+        "chunk_size_explicit": 0,
+        "chunk_size_recommended": 16,
+        "chunk_size_fallback": 8,
+        "attention_mode": "sageattn_2",
+        "temporal_overlap": 4,
+        "vae_encode_tiled": false,
+        "vae_decode_tiled": false,
+        "cache_dit": false,
+        "cache_vae": false,
+        "compile_dit": false,
+        "compile_vae": false,
+        "video_backend": "ffmpeg",
+        "ten_bit": true
     }
     
     Returns:
@@ -270,11 +286,37 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         if not input_presigned_url or not output_presigned_url:
             raise ValueError("Missing required fields: input_presigned_url, output_presigned_url")
         
-        runpod_endpoint_url = event.get("runpod", {}).get("run_endpoint")
+        runpod_endpoint_url = event.get("runpod_endpoint")
         if not runpod_endpoint_url:
-            raise ValueError("Missing required field: runpod.run_endpoint")
+            raise ValueError("Missing required field: runpod_endpoint")
         
-        params = event.get("params", {})
+        # Build params dict from flat upscale parameters
+        params = {
+            "log_level": event.get("log_level"),
+            "debug": event.get("debug"),
+            "seed": event.get("seed"),
+            "color_correction": event.get("color_correction"),
+            "model": event.get("model"),
+            "resolution": event.get("resolution"),
+            "batch_size_strategy": event.get("batch_size_strategy"),
+            "batch_size_explicit": event.get("batch_size_explicit"),
+            "batch_size_conservative": event.get("batch_size_conservative"),
+            "batch_size_quality": event.get("batch_size_quality"),
+            "chunk_size_strategy": event.get("chunk_size_strategy"),
+            "chunk_size_explicit": event.get("chunk_size_explicit"),
+            "chunk_size_recommended": event.get("chunk_size_recommended"),
+            "chunk_size_fallback": event.get("chunk_size_fallback"),
+            "attention_mode": event.get("attention_mode"),
+            "temporal_overlap": event.get("temporal_overlap"),
+            "vae_encode_tiled": event.get("vae_encode_tiled"),
+            "vae_decode_tiled": event.get("vae_decode_tiled"),
+            "cache_dit": event.get("cache_dit"),
+            "cache_vae": event.get("cache_vae"),
+            "compile_dit": event.get("compile_dit"),
+            "compile_vae": event.get("compile_vae"),
+            "video_backend": event.get("video_backend"),
+            "ten_bit": event.get("ten_bit")
+        }
         
         # 1. Generate callback token
         callback_token = generate_callback_token()
