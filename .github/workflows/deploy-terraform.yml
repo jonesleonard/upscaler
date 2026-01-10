@@ -24,6 +24,16 @@ on:
         required: false
         type: string
         default: "./src/terraform"
+      tf_var_runpod_max_concurrency:
+        description: "Max concurrency for RunPod upscaler"
+        required: false
+        type: number
+        default: 5
+      tf_var_ecs_max_concurrency:
+        description: "Max concurrency for ECS tasks"
+        required: false
+        type: number
+        default: 4
       tf_var_use_s5cmd:
         description: "Use s5cmd for faster S3 downloads"
         required: false
@@ -161,6 +171,8 @@ jobs:
             RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
             DIT_MODEL_S3_URI: ${{ secrets.DIT_MODEL_S3_URI }}
             VAE_MODEL_S3_URI: ${{ secrets.VAE_MODEL_S3_URI }}
+            RUNPOD_MAX_CONCURRENCY: ${{ inputs.tf_var_runpod_max_concurrency }}
+            ECS_MAX_CONCURRENCY: ${{ inputs.tf_var_ecs_max_concurrency }}
         run: |
           cat > terraform.tfvars << EOF
           region       = "${{ vars.AWS_REGION }}"
@@ -170,6 +182,8 @@ jobs:
           dit_model_s3_uri = "${{ env.DIT_MODEL_S3_URI }}"
           vae_model_s3_uri = "${{ env.VAE_MODEL_S3_URI }}"
           use_s5cmd = ${{ inputs.tf_var_use_s5cmd }}
+          runpod_max_concurrency = ${{ env.RUNPOD_MAX_CONCURRENCY }}
+          ecs_max_concurrency = ${{ env.ECS_MAX_CONCURRENCY }}
           EOF
 
       - name: Terraform Init
@@ -286,6 +300,8 @@ jobs:
             RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
             DIT_MODEL_S3_URI: ${{ secrets.DIT_MODEL_S3_URI }}
             VAE_MODEL_S3_URI: ${{ secrets.VAE_MODEL_S3_URI }}
+            RUNPOD_MAX_CONCURRENCY: ${{ inputs.tf_var_runpod_max_concurrency }}
+            ECS_MAX_CONCURRENCY: ${{ inputs.tf_var_ecs_max_concurrency }}
         run: |
           cat > terraform.tfvars << EOF
           region       = "${{ vars.AWS_REGION }}"
@@ -295,6 +311,8 @@ jobs:
           dit_model_s3_uri = "${{ env.DIT_MODEL_S3_URI }}"
           vae_model_s3_uri = "${{ env.VAE_MODEL_S3_URI }}"
           use_s5cmd = ${{ inputs.tf_var_use_s5cmd }}
+          runpod_max_concurrency = ${{ env.RUNPOD_MAX_CONCURRENCY }}
+          ecs_max_concurrency = ${{ env.ECS_MAX_CONCURRENCY }}
           EOF
 
       - name: Terraform Init
