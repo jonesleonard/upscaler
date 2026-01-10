@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir --pre torch torchvision torchaudio \
     --index-url https://download.pytorch.org/whl/cu121
 
 # Preinstall sageattention (used for ATTENTION_MODE=sageattn_2/3)
-RUN pip install --no-cache-dir sageattention
+RUN pip install --no-cache-dir sageattention flash-attn
 
 # Install SeedVR2
 ARG SEEDVR2_REPO="https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git"
