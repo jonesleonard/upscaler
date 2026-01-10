@@ -17,7 +17,6 @@
         "splitter_v_crf": 18,
         "upscale_job_definition": "${UPSCALE_JOB_DEFINITION_ARN}",
         "upscale_runpod_endpoint": "",
-        "upscale_ecs_max_concurrency": ${ECS_MAX_CONCURRENCY},
         "upscale_log_level": "DEBUG",
         "upscale_debug": true,
         "upscale_seed": 42,
@@ -113,7 +112,7 @@
     "UpscaleSegmentsECS": {
       "Type": "Map",
       "ItemsPath": "$.manifest.body.segments",
-      "MaxConcurrency.$": "$.upscale_ecs_max_concurrency",
+      "MaxConcurrency": ${ECS_MAX_CONCURRENCY},
       "Parameters": {
         "exec_id.$": "$.exec_id",
         "segment.$": "$$.Map.Item.Value",
