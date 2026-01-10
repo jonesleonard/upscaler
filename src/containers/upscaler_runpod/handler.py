@@ -185,8 +185,6 @@ def upscale_segment(job: Dict[str, Any]) -> Dict[str, Any]:
         # Validate input - now using presigned URLs instead of S3 URIs
         input_presigned_url = job_input.get("input_presigned_url")
         output_presigned_url = job_input.get("output_presigned_url")
-        vae_model_presigned_url = job_input.get("vae_model_presigned_url")
-        dit_model_presigned_url = job_input.get("dit_model_presigned_url")
         params = job_input.get("params", {})
         
         if not input_presigned_url:
