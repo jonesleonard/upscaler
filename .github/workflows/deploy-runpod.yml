@@ -1,128 +1,13 @@
 name: Deploy RunPod Configuration
 
 on:
-  workflow_call:
-    inputs:
-      docker_username:
-        description: 'DockerHub username'
-        required: true
-        type: string
-      image_name:
-        description: 'Docker image name'
-        required: true
-        type: string
-      tag:
-        description: 'Docker image tag (default: latest)'
-        required: true
-        type: string
-      seedvr2_repo:
-        description: 'SeedVR2 repository to use'
-        required: true
-        type: string
-      seedvr2_ref:
-        description: 'SeedVR2 version to use'
-        required: true
-        type: string
-      python_script_version:
-        description: 'Python version to use for RunPod actions'
-        required: false
-        type: string
-        default: '3.12'
-      runpod_rest_api_base_url:
-        description: 'RunPod REST API base URL'
-        required: true
-        type: string
-      network_volume_name:
-        description: 'RunPod network volume name'
-        required: false
-        type: string
-        default: 'seedvr2_upscaler'
-      network_volume_size:
-        description: 'RunPod network volume size in GB'
-        required: false
-        type: number
-        default: 30
-      network_volume_data_center_id:
-        description: 'RunPod network volume data center ID'
-        required: true
-        type: string
-      template_name:
-        description: 'RunPod template name'
-        required: false
-        type: string
-        default: 'seedvr2_upscaler'
-      template_container_disk:
-        description: 'RunPod template container disk size in GB'
-        required: false
-        type: number
-        default: 50
-      template_volume_in_gb:
-        description: 'RunPod template volume size in GB'
-        required: false
-        type: number
-        default: 20
-      endpoint_name:
-        description: 'RunPod endpoint name'
-        required: false
-        type: string
-        default: 'seedvr2_upscaler_endpoint'
-      endpoint_data_center_id:
-        description: 'RunPod endpoint data center ID'
-        required: true
-        type: string
-      endpoint_gpu_ids:
-        description: 'RunPod endpoint GPU IDs'
-        required: false
-        type: string
-        default: 'NVIDIA A40'
-      endpoint_workers_min:
-        description: 'RunPod endpoint minimum number of workers'
-        required: false
-        type: number
-        default: 0
-      endpoint_workers_max:
-        description: 'RunPod endpoint maximum number of workers'
-        required: false
-        type: number
-        default: 1
-      endpoint_idle_timeout:    
-        description: 'RunPod endpoint idle timeout in seconds'
-        required: false
-        type: number
-        default: 5
-      endpoint_execution_timeout_ms:
-        description: 'RunPod endpoint execution timeout in milliseconds'
-        required: false
-        type: number
-        default: 600000
-      endpoint_scaler_type:
-        description: 'RunPod endpoint scaler type'
-        required: false
-        type: string
-        default: 'QUEUE_DELAY'
-      endpoint_scaler_value:
-        description: 'RunPod endpoint scaler value'
-        required: false
-        type: number
-        default: 4
-    outputs:
-      network_volume_id:
-        description: "The ID of the created/updated network volume"
-        value: ${{ jobs.create-update-runpod-network-volume.outputs.network_volume_id }}
-      template_id:
-        description: "The ID of the created/updated template"
-        value: ${{ jobs.create-update-runpod-template.outputs.template_id }}
-      endpoint_id:
-        description: "The ID of the created/updated endpoint"
-        value: ${{ jobs.create-update-endpoint.outputs.endpoint_id }}
-    secrets:
-      dockerhub_token:
-        description: 'DockerHub access token'
-        required: true
-      runpod_api_key:
-        description: 'RunPod API key'
-        required: true
-
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/deploy-runpod.yml'
+      - 'src/containers/upscaler_runpod/**'
+      - 'src/runpod_mgmt/**'
 
 permissions:
   contents: read
@@ -135,14 +20,14 @@ jobs:
     name: Build and Push Docker Image
     uses: ./.github/workflows/docker-build-push.yml
     with:
-      dockerhub_username: ${{ inputs.docker_username }}
-      image_name: ${{ inputs.image_name }}
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+      image_name: "seedvr2-upscaler"
       build_context: './src/containers/upscaler_runpod'
       dockerfile: './src/containers/upscaler_runpod/Dockerfile'
-      tag: ${{ inputs.tag || 'latest' }}
+      tag: ${{ github.ref_name }}
       build_args: |
-        SEEDVR2_REPO=${{ inputs.seedvr2_repo  }}
-        SEEDVR2_REF=${{ inputs.seedvr2_ref  }}
+        SEEDVR2_REPO="https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git"
+        SEEDVR2_REF="v2.5.23"
     secrets:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -154,12 +39,12 @@ jobs:
     needs: build-and-push-seedvr2-image
     uses: ./.github/workflows/runpod-template.yml
     with:
-      python_version: ${{ inputs.python_script_version }}
-      runpod_rest_api_base_url: ${{ inputs.runpod_rest_api_base_url }}
+      python_version: "3.12"
+      runpod_rest_api_base_url: "https://rest.runpod.io/v1"
       full_image_name: ${{ needs.build-and-push-seedvr2-image.outputs.full_image_name }}
-      template_name: ${{ inputs.template_name }}
-      container_disk: ${{ inputs.template_container_disk }}
-      volume_in_gb: ${{ inputs.template_volume_in_gb }}
+      template_name: "seedvr2_upscaler_dev"
+      container_disk: 60
+      volume_in_gb: 30
     secrets:
       RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
   
@@ -170,11 +55,11 @@ jobs:
     name: Create/Update RunPod Network Volume
     uses: ./.github/workflows/runpod-network-volume.yml
     with:
-      python_version: ${{ inputs.python_script_version }}
-      runpod_rest_api_base_url: ${{ inputs.runpod_rest_api_base_url }}
-      network_volume_name: ${{ inputs.network_volume_name }}
-      data_center_id: ${{ inputs.network_volume_data_center_id }}
-      network_volume_size: ${{ inputs.network_volume_size }}
+      python_version: "3.12"
+      runpod_rest_api_base_url: "https://rest.runpod.io/v1"
+      network_volume_name: "seedvr2_upscaler_dev"
+      data_center_id: "US-KS-2"
+      network_volume_size: 30
     secrets:
       RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
   
@@ -189,19 +74,19 @@ jobs:
     uses: ./.github/workflows/runpod-endpoint.yml
     with:
       environment: "dev"
-      python_version: ${{ inputs.python_script_version }}
-      runpod_rest_api_base_url: ${{ inputs.runpod_rest_api_base_url }}
-      endpoint_name: ${{ inputs.endpoint_name }}
+      python_version: "3.12"
+      runpod_rest_api_base_url: "https://rest.runpod.io/v1"
+      endpoint_name: "seedvr2_upscaler_dev"
       network_volume_id: ${{ needs.create-update-runpod-network-volume.outputs.network_volume_id }}
       template_id: ${{ needs.create-update-runpod-template.outputs.template_id }}
-      data_center_id: ${{ inputs.endpoint_data_center_id }}
-      gpu_ids: ${{ inputs.endpoint_gpu_ids }}
-      workers_min: ${{ inputs.endpoint_workers_min }}
-      workers_max: ${{ inputs.endpoint_workers_max }}
-      idle_timeout: ${{ inputs.endpoint_idle_timeout }}
-      execution_timeout_ms: ${{ inputs.endpoint_execution_timeout_ms }}
-      scaler_type: ${{ inputs.endpoint_scaler_type }}
-      scaler_value: ${{ inputs.endpoint_scaler_value }}
+      data_center_id: "US-KS-2"
+      gpu_ids: "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-80GB"
+      workers_min: 0
+      workers_max: 3
+      idle_timeout: 5
+      execution_timeout_ms: 86400000
+      scaler_type: "QUEUE_DELAY"
+      scaler_value: 4
     secrets:
       RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
   

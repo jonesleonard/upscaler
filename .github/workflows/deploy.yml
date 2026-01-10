@@ -8,9 +8,6 @@ on:
       - main
     tags:
       - 'v*.*.*'
-  pull_request:
-    branches:
-      - main
 
 # Best Practice: Set default permissions to read-only for security
 permissions:
@@ -69,33 +66,33 @@ jobs:
   # ============================================================================
   # Deploy RunPod Upscaler
   # ============================================================================
-    deploy-runpod-upscaler:
-        name: Deploy RunPod Upscaler
-        uses: ./.github/workflows/deploy-runpod.yml
-        with:
-          docker_username: ${{ vars.DOCKERHUB_USERNAME }}
-          image_name: "seedvr2-upscaler"
-          tag: ${{ github.ref_name }}
-          seedvr2_repo: "https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git"
-          seedvr2_ref: "v2.5.23"
-          python_script_version: "3.12"
-          runpod_rest_api_base_url: "https://rest.runpod.io/v1"
-          # network volume
-          network_volume_name: "seedvr2_upscaler_dev"
-          network_volume_size: 30
-          network_volume_data_center_id: "US-KS-2"
-          # template
-          template_name: "seedvr2_upscaler_dev"
-          template_container_disk: 60
-          template_volume_in_gb: 30
-          # endpoint
-          endpoint_name: "seedvr2_upscaler_dev"
-          endpoint_data_center_id: "US-KS-2"
-          endpoint_gpu_ids: "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-80GB"
-          endpoint_workers_min: 0
-          endpoint_workers_max: 5
-          endpoint_idle_timeout: 5
-          endpoint_execution_timeout_ms: 86400000
-          endpoint_scaler_type: "QUEUE_DELAY"
-          endpoint_scaler_value: 4
-        secrets: inherit
+    # deploy-runpod-upscaler:
+    #     name: Deploy RunPod Upscaler
+    #     uses: ./.github/workflows/deploy-runpod.yml
+    #     with:
+    #       docker_username: ${{ vars.DOCKERHUB_USERNAME }}
+    #       image_name: "seedvr2-upscaler"
+    #       tag: ${{ github.ref_name }}
+    #       seedvr2_repo: "https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git"
+    #       seedvr2_ref: "v2.5.23"
+    #       python_script_version: "3.12"
+    #       runpod_rest_api_base_url: "https://rest.runpod.io/v1"
+    #       # network volume
+    #       network_volume_name: "seedvr2_upscaler_dev"
+    #       network_volume_size: 30
+    #       network_volume_data_center_id: "US-KS-2"
+    #       # template
+    #       template_name: "seedvr2_upscaler_dev"
+    #       template_container_disk: 60
+    #       template_volume_in_gb: 30
+    #       # endpoint
+    #       endpoint_name: "seedvr2_upscaler_dev"
+    #       endpoint_data_center_id: "US-KS-2"
+    #       endpoint_gpu_ids: "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-80GB"
+    #       endpoint_workers_min: 0
+    #       endpoint_workers_max: 3
+    #       endpoint_idle_timeout: 5
+    #       endpoint_execution_timeout_ms: 86400000
+    #       endpoint_scaler_type: "QUEUE_DELAY"
+    #       endpoint_scaler_value: 4
+    #     secrets: inherit
