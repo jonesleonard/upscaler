@@ -36,6 +36,36 @@ resource "aws_launch_template" "upscale" {
 }
 
 ################################################################################
+# IAM Policy for S3 Model Access
+################################################################################
+
+data "aws_iam_policy_document" "s3_model_access" {
+  statement {
+    sid    = "AllowModelDownload"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:ListBucket"
+    ]
+    resources = [
+      "arn:aws:s3:::${var.model_s3_bucket}",
+      "arn:aws:s3:::${var.model_s3_bucket}/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "s3_model_access" {
+  name        = "${var.project_name}-${var.environment}-batch-upscale-s3-model-access"
+  description = "Allow Batch upscale EC2 instances to download model files from S3"
+  policy      = data.aws_iam_policy_document.s3_model_access.json
+
+  tags = merge(var.tags, {
+    Name      = "${var.project_name}-${var.environment}-batch-upscale-s3-model-access"
+    Component = var.component
+  })
+}
+
+################################################################################
 # Batch - Upscale Job (EC2 with GPU)
 ################################################################################
 
@@ -43,11 +73,14 @@ module "batch_upscale" {
   source  = "terraform-aws-modules/batch/aws"
   version = "3.0.3"
 
-  create_service_iam_role             = false
-  create_instance_iam_role            = true
-  instance_iam_role_name              = "batch-upscale-gpu-${var.environment}"
-  instance_iam_role_path              = "/batch/"
-  instance_iam_role_description       = "IAM role for AWS Batch EC2 GPU instances"
+  create_service_iam_role       = false
+  create_instance_iam_role      = true
+  instance_iam_role_name        = "batch-upscale-gpu-${var.environment}"
+  instance_iam_role_path        = "/batch/"
+  instance_iam_role_description = "IAM role for AWS Batch EC2 GPU instances"
+  instance_iam_role_additional_policies = {
+    s3_model_access = aws_iam_policy.s3_model_access.arn
+  }
   create_spot_fleet_iam_role          = true
   spot_fleet_iam_role_name            = "${var.project_name}-${var.environment}-batch-spot-fleet-role"
   spot_fleet_iam_role_use_name_prefix = false

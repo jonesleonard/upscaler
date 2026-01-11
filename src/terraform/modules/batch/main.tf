@@ -99,6 +99,7 @@ module "upscale" {
   dit_model_s3_uri = var.dit_model_s3_uri
   vae_model_s3_uri = var.vae_model_s3_uri
   use_s5cmd        = var.use_s5cmd
+  model_s3_bucket  = var.model_s3_bucket
 }
 
 ################################################################################

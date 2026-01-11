@@ -39,6 +39,11 @@ on:
         required: false
         type: boolean
         default: false
+      tf_var_model_s3_bucket:
+        description: "S3 bucket name containing model files"
+        required: false
+        type: string
+        default: ""
     outputs:
       ecr_splitter_repository_name:
         description: "ECR Repository Name for Splitter Repository"
@@ -173,6 +178,7 @@ jobs:
             VAE_MODEL_S3_URI: ${{ secrets.VAE_MODEL_S3_URI }}
             RUNPOD_MAX_CONCURRENCY: ${{ inputs.tf_var_runpod_max_concurrency }}
             ECS_MAX_CONCURRENCY: ${{ inputs.tf_var_ecs_max_concurrency }}
+            MODEL_S3_BUCKET: ${{ inputs.tf_var_model_s3_bucket }}
         run: |
           cat > terraform.tfvars << EOF
           region       = "${{ vars.AWS_REGION }}"
@@ -184,6 +190,7 @@ jobs:
           use_s5cmd = ${{ inputs.tf_var_use_s5cmd }}
           runpod_max_concurrency = ${{ env.RUNPOD_MAX_CONCURRENCY }}
           ecs_max_concurrency = ${{ env.ECS_MAX_CONCURRENCY }}
+          model_s3_bucket = "${{ env.MODEL_S3_BUCKET }}"
           EOF
 
       - name: Terraform Init
@@ -302,6 +309,7 @@ jobs:
             VAE_MODEL_S3_URI: ${{ secrets.VAE_MODEL_S3_URI }}
             RUNPOD_MAX_CONCURRENCY: ${{ inputs.tf_var_runpod_max_concurrency }}
             ECS_MAX_CONCURRENCY: ${{ inputs.tf_var_ecs_max_concurrency }}
+            MODEL_S3_BUCKET: ${{ inputs.tf_var_model_s3_bucket }}
         run: |
           cat > terraform.tfvars << EOF
           region       = "${{ vars.AWS_REGION }}"
@@ -313,6 +321,7 @@ jobs:
           use_s5cmd = ${{ inputs.tf_var_use_s5cmd }}
           runpod_max_concurrency = ${{ env.RUNPOD_MAX_CONCURRENCY }}
           ecs_max_concurrency = ${{ env.ECS_MAX_CONCURRENCY }}
+          model_s3_bucket = "${{ env.MODEL_S3_BUCKET }}"
           EOF
 
       - name: Terraform Init

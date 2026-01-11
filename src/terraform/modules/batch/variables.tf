@@ -184,3 +184,9 @@ variable "use_s5cmd" {
   type        = bool
   default     = false
 }
+
+variable "model_s3_bucket" {
+  description = "S3 bucket name containing model files."
+  type        = string
+  default     = ""
+}
