@@ -186,7 +186,7 @@ variable "batch_fargate_max_vcpus" {
 variable "batch_gpu_instance_types" {
   description = "List of EC2 instance types for GPU compute."
   type        = list(string)
-  default     = ["g4dn.xlarge", "g4dn.2xlarge"]
+  default     = ["g5.xlarge", "g5.2xlarge"]
 }
 
 variable "batch_gpu_max_vcpus" {

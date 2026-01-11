@@ -146,7 +146,7 @@
             "Type": "Task",
             "Resource": "arn:aws:states:::batch:submitJob.sync",
             "Parameters": {
-              "JobName.$": "States.Format('upscale-{}-{}', $.exec_id, $.segment.index)",
+              "JobName.$": "States.Format('upscale-{}', $.segment.index)",
               "JobQueue": "${UPSCALE_JOB_QUEUE_ARN}",
               "JobDefinition.$": "$.upscale_job_definition",
               "ContainerOverrides": {

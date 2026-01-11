@@ -110,7 +110,7 @@ variable "fargate_max_vcpus" {
 variable "gpu_instance_types" {
   description = "List of EC2 instance types for GPU compute. Use 'g' or 'p' instance families for GPU workloads."
   type        = list(string)
-  default     = ["g4dn.xlarge", "g4dn.2xlarge"]
+  default     = ["g5.xlarge", "g5.2xlarge"]
 }
 
 variable "gpu_max_vcpus" {
