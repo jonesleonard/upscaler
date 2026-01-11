@@ -151,13 +151,12 @@ module "batch_upscale" {
       priority                 = 10
       create_scheduling_policy = false
 
-      # Prefer Spot instances for cost optimization, fall back to on-demand
       compute_environment_order = {
         0 = {
-          compute_environment_key = "ec2_gpu_spot"
+          compute_environment_key = "ec2_gpu"
         }
         1 = {
-          compute_environment_key = "ec2_gpu"
+          compute_environment_key = "ec2_gpu_spot"
         }
       }
 
